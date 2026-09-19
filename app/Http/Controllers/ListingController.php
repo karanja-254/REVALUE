@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Jobs\ProcessListingWithAI;
 use App\Models\Listing;
+use App\Models\ManualReview;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 
@@ -68,6 +69,33 @@ class ListingController extends Controller
         return response()->json([
             'message' => 'Price accepted. Item is now available for purchase.',
             'listing' => $listing,
+        ]);
+    }
+
+    public function requestReview(Request $request, Listing $listing)
+    {
+        $this->authorize('view', $listing);
+
+        $validated = $request->validate([
+            'reason' => 'nullable|string|max:500',
+        ]);
+
+        if ($listing->manualReview) {
+            return response()->json([
+                'error' => 'Item is already under manual review.',
+            ], 422);
+        }
+
+        ManualReview::create([
+            'listing_id' => $listing->id,
+            'status' => 'pending',
+            'notes' => 'Seller request: ' . ($validated['reason'] ?? 'No reason provided'),
+        ]);
+
+        $listing->update(['status' => 'under_review']);
+
+        return response()->json([
+            'message' => 'Your item has been submitted for manual pricing review. An admin will review it shortly.',
         ]);
     }
 }
