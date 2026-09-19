@@ -35,6 +35,11 @@ return [
         ],
     ],
 
+    'anthropic' => [
+        'key' => env('ANTHROPIC_API_KEY'),
+        'model' => env('ANTHROPIC_MODEL', 'claude-3-5-sonnet-20241022'),
+    ],
+
     /*
     | Google Maps (Maps/Logistics, Person 4). The JavaScript key is used by the
     | browser to render maps and draw routes. Leave blank in local/dev and the

@@ -4,16 +4,22 @@ namespace App\Http\Controllers\Logistics;
 
 use App\Http\Controllers\Controller;
 use App\Models\LogisticsRoute;
+use App\Models\User;
+use App\Services\Logistics\CollectionSchedule;
 use App\Services\Logistics\RouteBatchingService;
 use App\Support\Logistics\MapData;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class RouteController extends Controller
 {
-    public function __construct(private readonly RouteBatchingService $batching) {}
+    public function __construct(
+        private readonly RouteBatchingService $batching,
+        private readonly CollectionSchedule $schedule,
+    ) {}
 
     public function show(Request $request, LogisticsRoute $route): View
     {
@@ -41,8 +47,23 @@ class RouteController extends Controller
         abort_unless($request->user()->isAdmin(), 403);
 
         $validated = $request->validate([
-            'collection_date' => ['nullable', 'date'],
-            'driver_id' => ['nullable', 'exists:users,id'],
+            'collection_date' => [
+                'nullable',
+                'date',
+                // ReValue only runs collection routes on Wednesdays and Saturdays.
+                function (string $attribute, mixed $value, callable $fail): void {
+                    if (! $this->schedule->isCollectionDay(CarbonImmutable::parse($value))) {
+                        $fail('Collection runs only happen on Wednesdays and Saturdays. Please choose one of those days.');
+                    }
+                },
+            ],
+            // An assigned driver must be a logistics user (not a customer/admin).
+            'driver_id' => [
+                'nullable',
+                Rule::exists('users', 'id')->where('role', User::ROLE_LOGISTICS),
+            ],
+        ], [
+            'driver_id.exists' => 'The selected driver must be a user with the logistics role.',
         ]);
 
         $date = isset($validated['collection_date'])

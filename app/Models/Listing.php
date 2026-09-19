@@ -64,6 +64,9 @@ class Listing extends Model
         'suggested_price',
         'final_price',
         'status',
+        // AI / pricing (Person 3).
+        'processing_status',
+        'ai_metadata',
         // Pickup location (Maps/Logistics, Person 4).
         'pickup_address',
         'pickup_latitude',
@@ -79,6 +82,7 @@ class Listing extends Model
         return [
             'suggested_price' => 'decimal:2',
             'final_price' => 'decimal:2',
+            'ai_metadata' => 'json',
             'pickup_latitude' => 'float',
             'pickup_longitude' => 'float',
         ];
@@ -102,5 +106,15 @@ class Listing extends Model
     public function latestOrder(): HasOne
     {
         return $this->hasOne(Order::class)->latestOfMany();
+    }
+
+    public function priceOverrides(): HasMany
+    {
+        return $this->hasMany(PriceOverride::class);
+    }
+
+    public function manualReview(): HasOne
+    {
+        return $this->hasOne(ManualReview::class);
     }
 }

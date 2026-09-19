@@ -43,7 +43,7 @@
 
                 @if($order->order_status === \App\Models\Order::STATUS_PICKUP_FAILED)
                     <p class="mt-4 rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-700">
-                        Pickup failed — the item did not match the listing. A refund will be processed.
+                        Pickup failed — the item did not match the listing. The item remains with the seller and the order requires refund processing.
                     </p>
                 @endif
             </div>

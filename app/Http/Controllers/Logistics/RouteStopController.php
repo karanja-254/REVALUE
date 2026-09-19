@@ -50,7 +50,7 @@ class RouteStopController extends Controller
 
         $message = $request->itemMatches()
             ? 'Pickup verified. Item collected and seller payout is now READY.'
-            : 'Pickup marked as FAILED. The item stays with the seller and a refund will be started.';
+            : 'Pickup failed. Item remains with the seller and the order requires refund processing.';
 
         return back()->with('status', $message);
     }

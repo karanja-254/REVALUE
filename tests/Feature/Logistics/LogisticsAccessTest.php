@@ -6,6 +6,7 @@ use App\Models\LogisticsRoute;
 use App\Models\Order;
 use App\Models\RouteStop;
 use App\Models\User;
+use App\Services\Logistics\CollectionSchedule;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -44,6 +45,54 @@ class LogisticsAccessTest extends TestCase
             ->assertRedirect();
 
         $this->assertSame(1, LogisticsRoute::count());
+    }
+
+    public function test_a_non_wednesday_saturday_collection_date_is_rejected(): void
+    {
+        // Day after a valid collection day is always a non-collection day.
+        $badDate = app(CollectionSchedule::class)->nextCollectionDate()->addDay();
+
+        $this->actingAs(User::factory()->admin()->create())
+            ->post(route('logistics.routes.store'), ['collection_date' => $badDate->toDateString()])
+            ->assertSessionHasErrors('collection_date');
+
+        $this->assertSame(0, LogisticsRoute::count());
+    }
+
+    public function test_a_wednesday_or_saturday_collection_date_is_accepted(): void
+    {
+        $goodDate = app(CollectionSchedule::class)->nextCollectionDate();
+
+        $this->actingAs(User::factory()->admin()->create())
+            ->post(route('logistics.routes.store'), ['collection_date' => $goodDate->toDateString()])
+            ->assertSessionHasNoErrors()
+            ->assertRedirect();
+
+        $this->assertSame(1, LogisticsRoute::count());
+    }
+
+    public function test_a_normal_user_cannot_be_assigned_as_route_driver(): void
+    {
+        $customer = User::factory()->create(); // role = user
+
+        $this->actingAs(User::factory()->admin()->create())
+            ->post(route('logistics.routes.store'), ['driver_id' => $customer->id])
+            ->assertSessionHasErrors('driver_id');
+
+        $this->assertSame(0, LogisticsRoute::count());
+    }
+
+    public function test_a_logistics_user_can_be_assigned_as_route_driver(): void
+    {
+        $driver = User::factory()->logistics()->create();
+
+        $this->actingAs(User::factory()->admin()->create())
+            ->post(route('logistics.routes.store'), ['driver_id' => $driver->id])
+            ->assertSessionHasNoErrors()
+            ->assertRedirect();
+
+        $route = LogisticsRoute::firstOrFail();
+        $this->assertSame($driver->id, $route->driver_id);
     }
 
     public function test_a_driver_cannot_verify_a_stop_on_another_drivers_route(): void
