@@ -35,8 +35,12 @@ class ListingController extends Controller
             'processing_status' => 'pending',
         ]);
 
+        // Read image file and encode for AI processing
+        $imageContent = \Storage::disk('public')->get($imagePath);
+        $imageBase64 = base64_encode($imageContent);
+
         // Dispatch AI processing job
-        ProcessListingWithAI::dispatch($listing, $imagePath);
+        ProcessListingWithAI::dispatch($listing, $imageBase64);
 
         return response()->json([
             'message' => 'Listing created. AI is analyzing your item...',

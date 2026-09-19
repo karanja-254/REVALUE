@@ -24,7 +24,7 @@ class PriceOverrideController extends Controller
         }
 
         $validated = $request->validate([
-            'new_price' => 'required|numeric|min:100|max:9999999',
+            'new_price' => 'required|numeric|min:1|max:9999999',
             'reason' => 'required|string|max:500',
         ]);
 

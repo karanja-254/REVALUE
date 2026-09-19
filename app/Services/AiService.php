@@ -21,7 +21,7 @@ class AiService
     /**
      * Recognize item from image using Claude Vision
      *
-     * @param string $imageInput Image URL or base64-encoded image data
+     * @param string $imageInput Image URL (starts with http) or base64-encoded JPEG data
      * @param string $sellerDescription Seller's item description
      * @return array{category: string, condition: string, brand: ?string, model: ?string, detected_defects: array, confidence: float}
      * @throws Exception

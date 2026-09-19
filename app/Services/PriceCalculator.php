@@ -34,11 +34,12 @@ class PriceCalculator
     }
 
     /**
-     * Apply ReValue pricing formula: median * random(0.80, 0.90)
+     * Apply ReValue pricing formula: median * 0.85
+     * Fixed multiplier for deterministic pricing and replicability
      */
     public function applySuggestedPriceFormula(float $medianPrice): float
     {
-        $multiplier = rand(80, 90) / 100;
+        $multiplier = 0.85;
         return round($medianPrice * $multiplier, 2);
     }
 
