@@ -91,4 +91,9 @@ class Listing extends Model
     {
         return $this->hasOne(Order::class)->latestOfMany();
     }
+
+    public function priceOverrides(): HasMany
+    {
+        return $this->hasMany(PriceOverride::class);
+    }
 }
