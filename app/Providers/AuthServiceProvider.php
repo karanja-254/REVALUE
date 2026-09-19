@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use App\Models\Listing;
+use App\Models\ManualReview;
 use App\Policies\ListingPolicy;
+use App\Policies\ManualReviewPolicy;
 use Illuminate\Foundation\Support\Providers\AuthServiceProvider as ServiceProvider;
 
 class AuthServiceProvider extends ServiceProvider
@@ -13,6 +15,7 @@ class AuthServiceProvider extends ServiceProvider
      */
     protected $policies = [
         Listing::class => ListingPolicy::class,
+        ManualReview::class => ManualReviewPolicy::class,
     ];
 
     /**
