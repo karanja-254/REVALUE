@@ -4,10 +4,17 @@ namespace App\Services;
 
 use App\Models\JijiMarketData;
 
+/**
+ * JijiScraperService - MVP Market Reference Data
+ *
+ * For the MVP hackathon, market pricing uses hardcoded reference data seeded from typical Jiji.ke categories/conditions.
+ * Production should replace seedMarketData() with actual web scraping from Jiji.ke.
+ */
 class JijiScraperService
 {
     /**
      * Seed market data with hardcoded Jiji-like pricing (MVP approach)
+     * Production: Replace with actual Jiji.ke web scraping
      */
     public function seedMarketData(): void
     {

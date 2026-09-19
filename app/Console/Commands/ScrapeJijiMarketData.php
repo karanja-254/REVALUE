@@ -9,7 +9,7 @@ class ScrapeJijiMarketData extends Command
 {
     protected $signature = 'jiji:scrape';
 
-    protected $description = 'Scrape and ingest Jiji market data';
+    protected $description = '[MVP] Refresh seeded market reference data (placeholder for live Jiji scraping)';
 
     public function handle(JijiScraperService $scraper): int
     {

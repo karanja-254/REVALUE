@@ -345,15 +345,17 @@ This ensures ReValue undercuts Jiji slightly to be competitive.
 
 ---
 
-## Jiji Market Data
+## Jiji Market Data (MVP Seeded Reference)
 
-Seeded with sample data on system startup. To refresh:
+**IMPORTANT:** This MVP uses hardcoded seeded market reference data, not live Jiji.ke scraping.
+
+To refresh seeded data:
 
 ```bash
 php artisan jiji:scrape
 ```
 
-Scheduled daily via Laravel scheduler. For production, implement actual Jiji.ke web scraper.
+Scheduled daily via Laravel scheduler. **Production TODO:** Replace `seedMarketData()` in `JijiScraperService` with actual Jiji.ke web scraper.
 
 Sample categories and conditions:
 - **Electronics:** Mint, Excellent, Good, Fair

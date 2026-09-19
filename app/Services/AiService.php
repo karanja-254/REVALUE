@@ -11,9 +11,11 @@ class AiService
 
     public function __construct()
     {
-        $this->client = new Anthropic(
-            apiKey: config('services.anthropic.key'),
-        );
+        $apiKey = config('services.anthropic.key');
+        if (!$apiKey) {
+            throw new Exception('ANTHROPIC_API_KEY not configured. AI recognition unavailable.');
+        }
+        $this->client = new Anthropic(apiKey: $apiKey);
     }
 
     /**
@@ -73,7 +75,8 @@ Return ONLY valid JSON, no markdown or extra text.";
 
             return $result;
         } catch (Exception $e) {
-            throw new Exception('AI recognition failed: ' . $e->getMessage());
+            \Log::warning('AI recognition failed', ['error' => $e->getMessage()]);
+            throw new Exception('AI recognition failed. Item queued for manual review.');
         }
     }
 }
