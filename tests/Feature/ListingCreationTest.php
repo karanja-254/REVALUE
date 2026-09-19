@@ -22,7 +22,7 @@ class ListingCreationTest extends TestCase
         $user = User::factory()->create();
         $file = UploadedFile::fake()->create('item.jpg', 100, 'image/jpeg');
 
-        $response = $this->actingAs($user)->postJson('/api/listings', [
+        $response = $this->actingAs($user)->postJson('/listings', [
             'type' => 'sell',
             'title' => 'Samsung TV 43"',
             'description' => 'Good condition',
@@ -47,7 +47,7 @@ class ListingCreationTest extends TestCase
 
         $file = UploadedFile::fake()->create('item.jpg', 100, 'image/jpeg');
 
-        $response = $this->postJson('/api/listings', [
+        $response = $this->postJson('/listings', [
             'type' => 'sell',
             'title' => 'Test Item',
             'image' => $file,
@@ -61,7 +61,7 @@ class ListingCreationTest extends TestCase
         $user = User::factory()->create();
         $listing = Listing::factory()->create(['user_id' => $user->id]);
 
-        $response = $this->actingAs($user)->getJson("/api/listings/{$listing->id}");
+        $response = $this->actingAs($user)->getJson("/listings/{$listing->id}");
 
         $response->assertStatus(200);
         $response->assertJson(['id' => $listing->id]);

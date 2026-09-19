@@ -17,7 +17,7 @@ class AdminManualReviewTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
         $review = ManualReview::factory()->create(['status' => 'pending']);
 
-        $response = $this->actingAs($admin)->getJson('/api/admin/manual-reviews');
+        $response = $this->actingAs($admin)->getJson('/admin/manual-reviews');
 
         $response->assertStatus(200);
     }
@@ -28,7 +28,7 @@ class AdminManualReviewTest extends TestCase
         $listing = Listing::factory()->create(['status' => 'under_review']);
         $review = ManualReview::factory()->create(['listing_id' => $listing->id, 'status' => 'pending']);
 
-        $response = $this->actingAs($admin)->putJson("/api/admin/manual-reviews/{$review->id}/approve", [
+        $response = $this->actingAs($admin)->putJson("/admin/manual-reviews/{$review->id}/approve", [
             'final_price' => 9500.00,
             'notes' => 'Good condition, slightly below market',
         ]);
@@ -46,7 +46,7 @@ class AdminManualReviewTest extends TestCase
         $user = User::factory()->create(['role' => 'user']);
         $review = ManualReview::factory()->create();
 
-        $response = $this->actingAs($user)->putJson("/api/admin/manual-reviews/{$review->id}/approve", [
+        $response = $this->actingAs($user)->putJson("/admin/manual-reviews/{$review->id}/approve", [
             'final_price' => 9500.00,
         ]);
 

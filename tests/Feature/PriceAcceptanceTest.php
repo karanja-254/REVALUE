@@ -21,7 +21,7 @@ class PriceAcceptanceTest extends TestCase
             'status' => 'draft',
         ]);
 
-        $response = $this->actingAs($user)->putJson("/api/listings/{$listing->id}/accept-price");
+        $response = $this->actingAs($user)->putJson("/listings/{$listing->id}/accept-price");
 
         $response->assertStatus(200);
         $listing->refresh();
@@ -38,7 +38,7 @@ class PriceAcceptanceTest extends TestCase
             'status' => 'draft',
         ]);
 
-        $response = $this->actingAs($user)->putJson("/api/listings/{$listing->id}/accept-price");
+        $response = $this->actingAs($user)->putJson("/listings/{$listing->id}/accept-price");
 
         $response->assertStatus(422);
     }

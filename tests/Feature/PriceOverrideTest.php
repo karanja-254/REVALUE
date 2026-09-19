@@ -20,7 +20,7 @@ class PriceOverrideTest extends TestCase
             'final_price' => 8000.00,
         ]);
 
-        $response = $this->actingAs($superAdmin)->postJson("/api/admin/listings/{$listing->id}/override-price", [
+        $response = $this->actingAs($superAdmin)->postJson("/admin/listings/{$listing->id}/override-price", [
             'new_price' => 7500.00,
             'reason' => 'Market adjustment',
         ]);
@@ -36,7 +36,7 @@ class PriceOverrideTest extends TestCase
         $admin = User::factory()->create(['role' => 'admin']);
         $listing = Listing::factory()->create(['status' => 'available']);
 
-        $response = $this->actingAs($admin)->postJson("/api/admin/listings/{$listing->id}/override-price", [
+        $response = $this->actingAs($admin)->postJson("/admin/listings/{$listing->id}/override-price", [
             'new_price' => 7500.00,
             'reason' => 'Market adjustment',
         ]);
@@ -50,7 +50,7 @@ class PriceOverrideTest extends TestCase
         $listing = Listing::factory()->create();
         PriceOverride::factory()->create(['listing_id' => $listing->id]);
 
-        $response = $this->actingAs($superAdmin)->getJson("/api/admin/listings/{$listing->id}/price-history");
+        $response = $this->actingAs($superAdmin)->getJson("/admin/listings/{$listing->id}/price-history");
 
         $response->assertStatus(200);
     }
@@ -63,7 +63,7 @@ class PriceOverrideTest extends TestCase
             'final_price' => 8000.00,
         ]);
 
-        $response = $this->actingAs($superAdmin)->postJson("/api/admin/listings/{$listing->id}/override-price", [
+        $response = $this->actingAs($superAdmin)->postJson("/admin/listings/{$listing->id}/override-price", [
             'new_price' => 5.00,
             'reason' => 'Paystack hackathon demo',
         ]);

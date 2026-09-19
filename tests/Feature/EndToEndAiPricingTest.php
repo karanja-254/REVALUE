@@ -24,7 +24,7 @@ class EndToEndAiPricingTest extends TestCase
         $seller = User::factory()->create();
         $file = UploadedFile::fake()->create('tv.jpg', 100, 'image/jpeg');
 
-        $createResponse = $this->actingAs($seller)->postJson('/api/listings', [
+        $createResponse = $this->actingAs($seller)->postJson('/listings', [
             'type' => 'sell',
             'title' => 'Samsung 43" TV',
             'description' => 'Works perfectly',
@@ -44,7 +44,7 @@ class EndToEndAiPricingTest extends TestCase
         ]);
 
         // 3. Seller accepts price
-        $acceptResponse = $this->actingAs($seller)->putJson("/api/listings/{$listingId}/accept-price");
+        $acceptResponse = $this->actingAs($seller)->putJson("/listings/{$listingId}/accept-price");
 
         $this->assertEquals(200, $acceptResponse->status());
         $listing->refresh();
@@ -72,12 +72,12 @@ class EndToEndAiPricingTest extends TestCase
 
         // 2. Admin views queue
         $admin = User::factory()->create(['role' => 'admin']);
-        $queueResponse = $this->actingAs($admin)->getJson('/api/admin/manual-reviews');
+        $queueResponse = $this->actingAs($admin)->getJson('/admin/manual-reviews');
         $this->assertEquals(200, $queueResponse->status());
 
         // 3. Admin approves and sets price
         $approveResponse = $this->actingAs($admin)->putJson(
-            "/api/admin/manual-reviews/{$listing->manualReview->id}/approve",
+            "/admin/manual-reviews/{$listing->manualReview->id}/approve",
             [
                 'final_price' => 15000.00,
                 'notes' => 'Comparable to similar antiques',
@@ -103,7 +103,7 @@ class EndToEndAiPricingTest extends TestCase
         // 2. Super admin overrides price
         $superAdmin = User::factory()->create(['role' => 'super_admin']);
         $overrideResponse = $this->actingAs($superAdmin)->postJson(
-            "/api/admin/listings/{$listing->id}/override-price",
+            "/admin/listings/{$listing->id}/override-price",
             [
                 'new_price' => 7500.00,
                 'reason' => 'Market adjustment due to bulk order',
@@ -116,7 +116,7 @@ class EndToEndAiPricingTest extends TestCase
 
         // 3. Super admin views audit trail
         $historyResponse = $this->actingAs($superAdmin)->getJson(
-            "/api/admin/listings/{$listing->id}/price-history"
+            "/admin/listings/{$listing->id}/price-history"
         );
 
         $this->assertEquals(200, $historyResponse->status());

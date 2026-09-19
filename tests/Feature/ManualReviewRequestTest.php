@@ -20,7 +20,7 @@ class ManualReviewRequestTest extends TestCase
             'status' => 'draft',
         ]);
 
-        $response = $this->actingAs($user)->putJson("/api/listings/{$listing->id}/request-review", [
+        $response = $this->actingAs($user)->putJson("/listings/{$listing->id}/request-review", [
             'reason' => 'I think the price is too low',
         ]);
 
@@ -36,7 +36,7 @@ class ManualReviewRequestTest extends TestCase
         $listing = Listing::factory()->create(['user_id' => $user->id]);
         ManualReview::create(['listing_id' => $listing->id, 'status' => 'pending']);
 
-        $response = $this->actingAs($user)->putJson("/api/listings/{$listing->id}/request-review", [
+        $response = $this->actingAs($user)->putJson("/listings/{$listing->id}/request-review", [
             'reason' => 'Another review',
         ]);
 
