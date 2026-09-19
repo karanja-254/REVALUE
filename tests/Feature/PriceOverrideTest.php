@@ -54,4 +54,22 @@ class PriceOverrideTest extends TestCase
 
         $response->assertStatus(200);
     }
+
+    public function test_super_admin_can_override_to_ksh_5_for_demo(): void
+    {
+        $superAdmin = User::factory()->create(['role' => 'super_admin']);
+        $listing = Listing::factory()->create([
+            'status' => 'available',
+            'final_price' => 8000.00,
+        ]);
+
+        $response = $this->actingAs($superAdmin)->postJson("/api/admin/listings/{$listing->id}/override-price", [
+            'new_price' => 5.00,
+            'reason' => 'Paystack hackathon demo',
+        ]);
+
+        $response->assertStatus(200);
+        $listing->refresh();
+        $this->assertEquals(5.00, $listing->final_price);
+    }
 }

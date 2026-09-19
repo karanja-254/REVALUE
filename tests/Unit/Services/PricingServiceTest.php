@@ -68,4 +68,16 @@ class PricingServiceTest extends TestCase
         $this->assertEquals('under_review', $listing->status);
         $this->assertTrue(ManualReview::where('listing_id', $listing->id)->exists());
     }
+
+    public function test_pricing_is_deterministic(): void
+    {
+        $calculator = new PriceCalculator();
+
+        // Same input should always produce same output
+        $price1 = $calculator->applySuggestedPriceFormula(10000);
+        $price2 = $calculator->applySuggestedPriceFormula(10000);
+
+        $this->assertEquals($price1, $price2);
+        $this->assertEquals(8500.00, $price1); // median * 0.85
+    }
 }
