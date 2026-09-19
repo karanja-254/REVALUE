@@ -2,11 +2,16 @@
 
 namespace App\Models;
 
+use Database\Factories\PriceOverrideFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PriceOverride extends Model
 {
+    /** @use HasFactory<PriceOverrideFactory> */
+    use HasFactory;
+
     protected $fillable = ['listing_id', 'admin_id', 'old_price', 'new_price', 'reason', 'override_at'];
 
     protected function casts(): array
