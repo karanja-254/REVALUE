@@ -1,0 +1,116 @@
+🚀 REVALUE TASK BREAKDOWN GUIDE - Paste This Anywhere
+
+---
+
+WHAT'S THIS?
+Instead of one person doing everything, we break big tasks into smaller pieces. Each person gets a clear job. One person oversees everything so nothing falls through the cracks.
+
+---
+
+HOW TO USE IT:
+
+1️⃣ Someone posts a task in the group
+   Example: "We need to build a payment system for mobile"
+
+2️⃣ Write back: "Need orchestrator to break this down"
+   (The orchestrator is just asking the AI to split the work into steps)
+
+3️⃣ Orchestrator replies with:
+   • Subtask 1: Design payment flow (2 hours)
+   • Subtask 2: Build payment API (4 hours)
+   • Subtask 3: Add payment UI (3 hours)
+   • Subtask 4: Test everything (2 hours)
+
+4️⃣ Each person picks a subtask and does it
+   No waiting. No blocked work. Clear finish line.
+
+5️⃣ When done, one person reviews all the code
+   Makes sure it works together. Done.
+
+---
+
+WHAT YOU GET:
+✅ Know exactly what you're building (no surprises)
+✅ Know how long it should take (realistic deadlines)
+✅ Know who's doing what (no duplicate work)
+✅ Know what comes before your work (dependencies)
+✅ One person watching the whole thing (no chaos)
+
+---
+
+EXAMPLE:
+
+Task: Build real-time notifications for the app
+
+Subtask 1 (Ronald): Design how notifications work
+• Output: A simple plan/document
+• Time: 2 hours
+• Then: Subtasks 2 & 3 can start
+
+Subtask 2 (Karanja): Build notification backend
+• Input: Ronald's plan from Subtask 1
+• Time: 3 hours
+• Then: Subtask 4 can start
+
+Subtask 3 (Anne): Build notification UI
+• Input: Ronald's plan from Subtask 1
+• Time: 2 hours
+• Then: Subtask 4 can start
+
+Subtask 4 (James): Test & review everything
+• Input: Karanja & Anne's work
+• Time: 1 hour
+• Then: Ready to ship
+
+Total time: 4 hours (not 8) because some work happens at the same time
+
+---
+
+WHEN TO USE THIS:
+• New feature (payment, notifications, search, etc.)
+• Bug that needs multiple people
+• Something that would normally take one person a week
+• Anything where people are stepping on each other
+
+---
+
+WHAT THE ORCHESTRATOR ACTUALLY DOES:
+Just ask the AI: "Break down this task into steps. Who should do each step? What order? What depends on what?"
+
+The AI tells you:
+1. The pieces
+2. Who's best for each piece (based on what they're good at)
+3. Which pieces can happen at the same time
+4. Which pieces wait for others
+
+That's it. No magic. Just organized chaos.
+
+---
+
+HOW TO START:
+
+Next time you have a task:
+1. Post it in the group
+2. Say: "Let's use the task orchestrator"
+3. Someone (ideally Ronald) asks the AI to break it down
+4. Everyone picks a subtask
+5. Work happens
+6. One review. Done.
+
+---
+
+QUICK TIPS:
+• If you get stuck, say so immediately (don't wait)
+• If something takes longer than expected, tell the group
+• If you finish early, ask what's next (don't start random work)
+• One person owns each subtask (don't split it further)
+• Keep your subtask focused (one clear job)
+
+---
+
+THAT'S IT. Questions? Ask Ronald.
+
+Link to full docs (for the curious):
+- Full orchestrator rules: .cursor/prompts/task-orchestrator.md
+- Which person for which type of work: .cursor/docs/AGENT_REGISTRY.md
+- Full task template: .cursor/templates/task-breakdown.md
