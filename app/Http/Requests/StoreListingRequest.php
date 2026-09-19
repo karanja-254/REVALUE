@@ -19,6 +19,15 @@ class StoreListingRequest extends FormRequest
      */
     public function rules(): array
     {
+        if ($this->wantsJson()) {
+            return [
+                'type' => ['required', Rule::in(Listing::TYPES)],
+                'title' => ['required', 'string', 'max:255'],
+                'description' => ['nullable', 'string'],
+                'image' => ['required', 'image', 'mimes:jpeg,png,webp', 'max:5120'],
+            ];
+        }
+
         return [
             'type' => ['required', Rule::in(Listing::TYPES)],
             'title' => ['required', 'string', 'max:160'],

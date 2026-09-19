@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\Admin\ManualReviewController;
 use App\Http\Controllers\Admin\OrganizationController as AdminOrganizationController;
 use App\Http\Controllers\Admin\PayoutController;
+use App\Http\Controllers\Admin\PriceOverrideController;
 use App\Http\Controllers\CharityNeedController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\DashboardController;
@@ -65,6 +67,16 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    Route::put('/listings/{listing}/accept-price', [ListingController::class, 'acceptPrice']);
+    Route::put('/listings/{listing}/request-review', [ListingController::class, 'requestReview']);
+
+    Route::prefix('admin')->group(function () {
+        Route::get('/manual-reviews', [ManualReviewController::class, 'index']);
+        Route::put('/manual-reviews/{review}/approve', [ManualReviewController::class, 'approve']);
+        Route::post('/listings/{listing}/override-price', [PriceOverrideController::class, 'store']);
+        Route::get('/listings/{listing}/price-history', [PriceOverrideController::class, 'history']);
+    });
 });
 
 require __DIR__.'/auth.php';
