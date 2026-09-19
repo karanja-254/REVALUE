@@ -64,6 +64,8 @@ class Listing extends Model
         'suggested_price',
         'final_price',
         'status',
+        'processing_status',
+        'ai_metadata',
     ];
 
     /**
@@ -74,6 +76,7 @@ class Listing extends Model
         return [
             'suggested_price' => 'decimal:2',
             'final_price' => 'decimal:2',
+            'ai_metadata' => 'json',
         ];
     }
 
