@@ -1,4 +1,7 @@
 <x-guest-layout>
+    <h1 class="mb-1 text-2xl font-bold text-forest">Welcome back</h1>
+    <p class="mb-6 text-sm text-forest/60">Log in to sell, donate, recycle, or claim items.</p>
+
     <!-- Session Status -->
     <x-auth-session-status class="mb-4" :status="session('status')" />
 

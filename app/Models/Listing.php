@@ -91,4 +91,66 @@ class Listing extends Model
     {
         return $this->hasOne(Order::class)->latestOfMany();
     }
+
+    public function donationClaim(): HasOne
+    {
+        return $this->hasOne(DonationClaim::class);
+    }
+
+    public function isSell(): bool
+    {
+        return $this->type === self::TYPE_SELL;
+    }
+
+    public function isDonate(): bool
+    {
+        return $this->type === self::TYPE_DONATE;
+    }
+
+    public function isRecycle(): bool
+    {
+        return $this->type === self::TYPE_RECYCLE;
+    }
+
+    public function isAvailable(): bool
+    {
+        return $this->status === self::STATUS_AVAILABLE;
+    }
+
+    public function displayPrice(): ?string
+    {
+        $price = $this->final_price ?? $this->suggested_price;
+
+        if ($price === null) {
+            return null;
+        }
+
+        return 'KSh '.number_format((float) $price);
+    }
+
+    public function imageUrl(): ?string
+    {
+        if (! $this->image_path) {
+            return null;
+        }
+
+        return asset('storage/'.$this->image_path);
+    }
+
+    public function coverImage(): string
+    {
+        if ($this->imageUrl()) {
+            return $this->imageUrl();
+        }
+
+        return match ($this->category) {
+            'electronics' => 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?auto=format&fit=crop&w=900&q=70',
+            'furniture' => 'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=900&q=70',
+            'appliances' => 'https://images.unsplash.com/photo-1574269909862-7e1d70bb8078?auto=format&fit=crop&w=900&q=70',
+            'mattresses' => 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=900&q=70',
+            'office' => 'https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&w=900&q=70',
+            'clothing' => 'https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?auto=format&fit=crop&w=900&q=70',
+            default => 'https://images.unsplash.com/photo-1484154218962-a197022b5858?auto=format&fit=crop&w=900&q=70',
+        };
+    }
 }

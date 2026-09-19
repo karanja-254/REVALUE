@@ -6,6 +6,7 @@ namespace App\Models;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -85,6 +86,16 @@ class User extends Authenticatable
     public function sellerPayouts(): HasMany
     {
         return $this->hasMany(SellerPayout::class, 'seller_id');
+    }
+
+    public function organization(): HasOne
+    {
+        return $this->hasOne(Organization::class);
+    }
+
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class, 'reviewer_id');
     }
 
     public function hasRole(string $role): bool

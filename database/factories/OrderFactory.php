@@ -50,4 +50,13 @@ class OrderFactory extends Factory
             'delivery_pin' => (string) fake()->numberBetween(1000, 9999),
         ]);
     }
+
+    public function completed(): static
+    {
+        return $this->paid()->state(fn (array $attributes) => [
+            'order_status' => Order::STATUS_COMPLETED,
+            'pickup_verified_at' => now()->subDay(),
+            'delivery_verified_at' => now()->subHour(),
+        ]);
+    }
 }

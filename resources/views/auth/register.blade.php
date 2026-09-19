@@ -1,4 +1,7 @@
 <x-guest-layout>
+    <h1 class="mb-1 text-2xl font-bold text-forest">Create your ReValue account</h1>
+    <p class="mb-6 text-sm text-forest/60">One account can sell and buy. Charities apply for verification after signup.</p>
+
     <form method="POST" action="{{ route('register') }}">
         @csrf
 

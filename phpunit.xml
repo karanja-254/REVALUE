@@ -32,5 +32,8 @@
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
+        <env name="PAYSTACK_SECRET_KEY" value="sk_test_revalue_dummy"/>
+        <env name="PAYSTACK_CALLBACK_URL" value="https://karanja.ninja/api/paystack/callback"/>
+        <env name="PAYSTACK_CURRENCY" value="KES"/>
     </php>
 </phpunit>
