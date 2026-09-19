@@ -32,6 +32,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/tracking', [OrderTrackingController::class, 'index'])->name('tracking.index');
     Route::get('/tracking/{order}', [OrderTrackingController::class, 'show'])->name('tracking.show');
     Route::get('/tracking/{order}/locations', [OrderTrackingController::class, 'locations'])->name('tracking.locations');
+    Route::post('/tracking/{order}/pickup-location', [OrderTrackingController::class, 'updatePickupLocation'])->name('tracking.pickup-location');
+    Route::post('/tracking/{order}/delivery-location', [OrderTrackingController::class, 'updateDeliveryLocation'])->name('tracking.delivery-location');
 });
 
 /*

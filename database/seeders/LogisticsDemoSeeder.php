@@ -71,15 +71,39 @@ class LogisticsDemoSeeder extends Seeder
             'recorded_at' => now(),
         ]);
 
-        // 3 paid orders that still need a pickup.
-        for ($i = 0; $i < 3; $i++) {
+        // Demo seller — one order WITHOUT pickup location so they can try the picker.
+        $demoSeller = User::updateOrCreate(
+            ['email' => 'seller-demo@revalue.test'],
+            [
+                'name' => 'Demo Seller',
+                'password' => Hash::make('password'),
+                'email_verified_at' => now(),
+                'role' => User::ROLE_USER,
+            ]
+        );
+
+        $this->makeOrder(Order::STATUS_PAID, seller: $demoSeller, withPickupLocation: false);
+
+        // Demo buyer — one picked-up order WITHOUT delivery location.
+        $demoBuyer = User::updateOrCreate(
+            ['email' => 'buyer-demo@revalue.test'],
+            [
+                'name' => 'Demo Buyer',
+                'password' => Hash::make('password'),
+                'email_verified_at' => now(),
+                'role' => User::ROLE_USER,
+            ]
+        );
+
+        $this->makeOrder(Order::STATUS_PICKED_UP, buyer: $demoBuyer, withDeliveryLocation: false);
+
+        // 2 more paid orders with full locations (for the route map).
+        for ($i = 0; $i < 2; $i++) {
             $this->makeOrder(Order::STATUS_PAID);
         }
 
-        // 2 orders already collected that still need delivery.
-        for ($i = 0; $i < 2; $i++) {
-            $this->makeOrder(Order::STATUS_PICKED_UP);
-        }
+        // 1 more picked-up order with full locations.
+        $this->makeOrder(Order::STATUS_PICKED_UP);
 
         // Batch everything onto the next collection-day route, assigned to the driver.
         $batching = app(RouteBatchingService::class);
@@ -92,29 +116,31 @@ class LogisticsDemoSeeder extends Seeder
 
         $this->command?->info('Logistics demo seeded:');
         $this->command?->info('  Driver login: driver@revalue.test / password');
+        $this->command?->info('  Seller (share pickup): seller-demo@revalue.test / password');
+        $this->command?->info('  Buyer (share delivery): buyer-demo@revalue.test / password');
         $this->command?->info("  Route #{$route->id} with {$route->stops()->count()} stops on {$route->collection_date->toDateString()}");
-        $buyer = Order::query()->latest('id')->first()?->buyer;
-        if ($buyer) {
-            $this->command?->info("  Buyer login: {$buyer->email} / password (view tracking)");
-        }
     }
 
     /**
-     * Create a seller, buyer, listing (with pickup location) and an order
-     * (with delivery location + PINs) in the given order status.
+     * Create a seller, buyer, listing and order in the given order status.
      */
-    private function makeOrder(string $orderStatus): Order
-    {
+    private function makeOrder(
+        string $orderStatus,
+        ?User $seller = null,
+        ?User $buyer = null,
+        bool $withPickupLocation = true,
+        bool $withDeliveryLocation = true,
+    ): Order {
         $pickupPlace = $this->places[array_rand($this->places)];
         $deliveryPlace = $this->places[array_rand($this->places)];
 
-        $seller = User::factory()->create([
+        $seller ??= User::factory()->create([
             'name' => fake()->name(),
             'role' => User::ROLE_USER,
             'password' => Hash::make('password'),
         ]);
 
-        $buyer = User::factory()->create([
+        $buyer ??= User::factory()->create([
             'name' => fake()->name(),
             'role' => User::ROLE_USER,
             'password' => Hash::make('password'),
@@ -126,10 +152,10 @@ class LogisticsDemoSeeder extends Seeder
                 'Samsung 43" Smart TV', 'Leather 3-seater sofa', 'Double bed mattress',
                 'Office desk', 'Microwave oven', 'Dining table set',
             ]),
-            'pickup_address' => $pickupPlace['name'],
-            'pickup_latitude' => $pickupPlace['lat'],
-            'pickup_longitude' => $pickupPlace['lng'],
-            'pickup_notes' => 'Call on arrival at the gate.',
+            'pickup_address' => $withPickupLocation ? $pickupPlace['name'] : null,
+            'pickup_latitude' => $withPickupLocation ? $pickupPlace['lat'] : null,
+            'pickup_longitude' => $withPickupLocation ? $pickupPlace['lng'] : null,
+            'pickup_notes' => $withPickupLocation ? 'Call on arrival at the gate.' : null,
         ]);
 
         $isPickedUp = $orderStatus === Order::STATUS_PICKED_UP;
@@ -139,10 +165,10 @@ class LogisticsDemoSeeder extends Seeder
             'buyer_id' => $buyer->id,
             'order_status' => $orderStatus,
             'pickup_verified_at' => $isPickedUp ? now()->subHours(2) : null,
-            'delivery_address' => $deliveryPlace['name'],
-            'delivery_latitude' => $deliveryPlace['lat'],
-            'delivery_longitude' => $deliveryPlace['lng'],
-            'delivery_notes' => 'Leave with the watchman if not in.',
+            'delivery_address' => $withDeliveryLocation ? $deliveryPlace['name'] : null,
+            'delivery_latitude' => $withDeliveryLocation ? $deliveryPlace['lat'] : null,
+            'delivery_longitude' => $withDeliveryLocation ? $deliveryPlace['lng'] : null,
+            'delivery_notes' => $withDeliveryLocation ? 'Leave with the watchman if not in.' : null,
         ]);
     }
 }

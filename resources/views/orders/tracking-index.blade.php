@@ -10,6 +10,21 @@
             <div class="bg-white rounded-lg shadow-sm">
                 <div class="divide-y divide-gray-100">
                     @forelse($orders as $order)
+                        @php
+                            $isBuyer = $order->viewer_role === 'buyer';
+                            $isSeller = $order->viewer_role === 'seller';
+                            $needsPickup = $isSeller
+                                && ! $order->listing?->hasPickupLocation()
+                                && in_array($order->order_status, [\App\Models\Order::STATUS_PAID, \App\Models\Order::STATUS_SCHEDULED], true);
+                            $needsDelivery = $isBuyer
+                                && ! $order->hasDeliveryLocation()
+                                && in_array($order->order_status, [
+                                    \App\Models\Order::STATUS_PAID,
+                                    \App\Models\Order::STATUS_SCHEDULED,
+                                    \App\Models\Order::STATUS_PICKED_UP,
+                                    \App\Models\Order::STATUS_OUT_FOR_DELIVERY,
+                                ], true);
+                        @endphp
                         <a href="{{ route('tracking.show', $order) }}"
                            class="flex items-center justify-between px-5 py-4 hover:bg-gray-50">
                             <div>
@@ -20,6 +35,13 @@
                                     Order #{{ $order->id }} ·
                                     You are the <strong>{{ $order->viewer_role }}</strong>
                                 </p>
+                                @if($needsPickup || $needsDelivery)
+                                    <p class="mt-1 text-xs text-amber-600 font-medium">
+                                        @if($needsPickup) Share your pickup location @endif
+                                        @if($needsPickup && $needsDelivery) · @endif
+                                        @if($needsDelivery) Share your delivery location @endif
+                                    </p>
+                                @endif
                             </div>
                             <x-logistics.status-badge :status="$order->order_status" />
                         </a>

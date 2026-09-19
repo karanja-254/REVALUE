@@ -85,4 +85,91 @@ class OrderTrackingTest extends TestCase
             ->assertOk()
             ->assertJsonStructure(['stops', 'driver', 'center' => ['lat', 'lng']]);
     }
+
+    public function test_seller_sees_pickup_location_picker_when_not_yet_shared(): void
+    {
+        $seller = User::factory()->create();
+        $listing = Listing::factory()->for($seller)->available()->create([
+            'pickup_address' => null,
+            'pickup_latitude' => null,
+            'pickup_longitude' => null,
+        ]);
+        $order = Order::factory()->for($listing)->paid()->create();
+
+        $this->actingAs($seller)
+            ->get(route('tracking.show', $order))
+            ->assertOk()
+            ->assertSee('Share your pickup location')
+            ->assertSee('Use my current location');
+    }
+
+    public function test_buyer_sees_delivery_location_picker_when_not_yet_shared(): void
+    {
+        $buyer = User::factory()->create();
+        $order = Order::factory()->paid()->create([
+            'buyer_id' => $buyer->id,
+            'delivery_address' => null,
+            'delivery_latitude' => null,
+            'delivery_longitude' => null,
+        ]);
+
+        $this->actingAs($buyer)
+            ->get(route('tracking.show', $order))
+            ->assertOk()
+            ->assertSee('Share your delivery location');
+    }
+
+    public function test_seller_can_save_pickup_location(): void
+    {
+        $seller = User::factory()->create();
+        $listing = Listing::factory()->for($seller)->available()->create();
+        $order = Order::factory()->for($listing)->paid()->create();
+
+        $this->actingAs($seller)
+            ->post(route('tracking.pickup-location', $order), [
+                'address' => 'Westlands, Nairobi',
+                'latitude' => -1.2649,
+                'longitude' => 36.8029,
+                'notes' => 'Gate B',
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('location_status');
+
+        $listing->refresh();
+        $this->assertSame('Westlands, Nairobi', $listing->pickup_address);
+        $this->assertSame(-1.2649, $listing->pickup_latitude);
+    }
+
+    public function test_buyer_can_save_delivery_location(): void
+    {
+        $buyer = User::factory()->create();
+        $order = Order::factory()->paid()->create(['buyer_id' => $buyer->id]);
+
+        $this->actingAs($buyer)
+            ->post(route('tracking.delivery-location', $order), [
+                'address' => 'Kilimani, Nairobi',
+                'latitude' => -1.2907,
+                'longitude' => 36.7860,
+            ])
+            ->assertRedirect()
+            ->assertSessionHas('location_status');
+
+        $order->refresh();
+        $this->assertSame('Kilimani, Nairobi', $order->delivery_address);
+        $this->assertSame(-1.2907, $order->delivery_latitude);
+    }
+
+    public function test_buyer_cannot_save_pickup_location(): void
+    {
+        $buyer = User::factory()->create();
+        $order = Order::factory()->paid()->create(['buyer_id' => $buyer->id]);
+
+        $this->actingAs($buyer)
+            ->post(route('tracking.pickup-location', $order), [
+                'address' => 'Westlands',
+                'latitude' => -1.26,
+                'longitude' => 36.80,
+            ])
+            ->assertForbidden();
+    }
 }

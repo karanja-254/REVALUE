@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Logistics\UpdateDeliveryLocationRequest;
+use App\Http\Requests\Logistics\UpdatePickupLocationRequest;
 use App\Models\Order;
 use App\Support\Logistics\MapData;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -62,6 +65,42 @@ class OrderTrackingController extends Controller
     }
 
     /**
+     * Seller pins where the driver should collect the item.
+     */
+    public function updatePickupLocation(UpdatePickupLocationRequest $request, Order $order): RedirectResponse
+    {
+        $this->authorizeSeller($request, $order);
+        $this->assertPickupLocationEditable($order);
+
+        $order->listing->update([
+            'pickup_address' => $request->input('address'),
+            'pickup_latitude' => $request->input('latitude'),
+            'pickup_longitude' => $request->input('longitude'),
+            'pickup_notes' => $request->input('notes'),
+        ]);
+
+        return back()->with('location_status', 'Pickup location saved. The driver can now navigate to you.');
+    }
+
+    /**
+     * Buyer pins where the driver should deliver the item.
+     */
+    public function updateDeliveryLocation(UpdateDeliveryLocationRequest $request, Order $order): RedirectResponse
+    {
+        $this->authorizeBuyer($request, $order);
+        $this->assertDeliveryLocationEditable($order);
+
+        $order->update([
+            'delivery_address' => $request->input('address'),
+            'delivery_latitude' => $request->input('latitude'),
+            'delivery_longitude' => $request->input('longitude'),
+            'delivery_notes' => $request->input('notes'),
+        ]);
+
+        return back()->with('location_status', 'Delivery location saved. The driver can now navigate to you.');
+    }
+
+    /**
      * A buyer, the seller, or any admin/logistics user may view tracking.
      */
     private function authorizeView(Request $request, Order $order): void
@@ -78,5 +117,35 @@ class OrderTrackingController extends Controller
         $isSeller = $order->listing?->user_id === $user->id;
 
         abort_unless($isBuyer || $isSeller, 403);
+    }
+
+    private function authorizeSeller(Request $request, Order $order): void
+    {
+        $order->loadMissing('listing');
+
+        abort_unless($order->listing?->user_id === $request->user()->id, 403);
+    }
+
+    private function authorizeBuyer(Request $request, Order $order): void
+    {
+        abort_unless($order->buyer_id === $request->user()->id, 403);
+    }
+
+    private function assertPickupLocationEditable(Order $order): void
+    {
+        abort_unless(in_array($order->order_status, [
+            Order::STATUS_PAID,
+            Order::STATUS_SCHEDULED,
+        ], true), 403, 'Pickup location can no longer be changed for this order.');
+    }
+
+    private function assertDeliveryLocationEditable(Order $order): void
+    {
+        abort_unless(in_array($order->order_status, [
+            Order::STATUS_PAID,
+            Order::STATUS_SCHEDULED,
+            Order::STATUS_PICKED_UP,
+            Order::STATUS_OUT_FOR_DELIVERY,
+        ], true), 403, 'Delivery location can no longer be changed for this order.');
     }
 }

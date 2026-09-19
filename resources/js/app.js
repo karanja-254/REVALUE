@@ -4,6 +4,7 @@ import Alpine from 'alpinejs';
 
 import { initLogisticsMaps } from './logistics/map.js';
 import { initDriverTracker } from './logistics/driver-tracker.js';
+import { initLocationPickers } from './logistics/location-picker.js';
 
 window.Alpine = Alpine;
 
@@ -13,6 +14,7 @@ Alpine.start();
 function initLogistics() {
     initLogisticsMaps();
     initDriverTracker();
+    initLocationPickers();
 }
 
 if (document.readyState === 'loading') {
