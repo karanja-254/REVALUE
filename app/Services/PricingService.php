@@ -17,13 +17,13 @@ class PricingService
      * Process listing: AI recognition + pricing logic
      * Updates listing with AI results and suggests price or queues for manual review
      */
-    public function processListing(Listing $listing, string $imageInput): void
+    public function processListing(Listing $listing, string $imageInput, string $mimeType = 'image/jpeg'): void
     {
         $listing->update(['processing_status' => 'processing']);
 
         try {
             // Step 1: AI recognition
-            $aiResult = $this->aiService->recognizeItem($imageInput, $listing->description ?? '');
+            $aiResult = $this->aiService->recognizeItem($imageInput, $listing->description ?? '', $mimeType);
 
             // Step 2: Update listing with AI results
             $listing->update([

@@ -18,7 +18,7 @@ class ListingController extends Controller
             'type' => 'required|in:sell,donate,recycle',
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'image' => 'required|image|max:5120',
+            'image' => 'required|image|mimes:jpeg,png,webp|max:5120',
         ]);
 
         // For MVP, save image locally. In production, use Cloudinary/S3
@@ -38,9 +38,10 @@ class ListingController extends Controller
         // Read image file and encode for AI processing
         $imageContent = \Storage::disk('public')->get($imagePath);
         $imageBase64 = base64_encode($imageContent);
+        $mimeType = $request->file('image')->getMimeType();
 
         // Dispatch AI processing job
-        ProcessListingWithAI::dispatch($listing, $imageBase64);
+        ProcessListingWithAI::dispatch($listing, $imageBase64, $mimeType);
 
         return response()->json([
             'message' => 'Listing created. AI is analyzing your item...',

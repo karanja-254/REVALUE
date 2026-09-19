@@ -21,12 +21,13 @@ class AiService
     /**
      * Recognize item from image using Claude Vision
      *
-     * @param string $imageInput Image URL (starts with http) or base64-encoded JPEG data
+     * @param string $imageInput Image URL (starts with http) or base64-encoded image data
      * @param string $sellerDescription Seller's item description
+     * @param string $mimeType MIME type for base64 images (e.g., 'image/jpeg', 'image/png', 'image/webp')
      * @return array{category: string, condition: string, brand: ?string, model: ?string, detected_defects: array, confidence: float}
      * @throws Exception
      */
-    public function recognizeItem(string $imageInput, string $sellerDescription): array
+    public function recognizeItem(string $imageInput, string $sellerDescription, string $mimeType = 'image/jpeg'): array
     {
         try {
             $prompt = "Analyze this item image and seller description. Return JSON with:
@@ -42,7 +43,7 @@ Seller description: $sellerDescription
 Return ONLY valid JSON, no markdown or extra text.";
 
             $response = $this->client->messages()->create(
-                model: 'claude-3-5-sonnet-20241022',
+                model: config('services.anthropic.model', 'claude-3-5-sonnet-20241022'),
                 max_tokens: 500,
                 messages: [
                     [
@@ -53,7 +54,7 @@ Return ONLY valid JSON, no markdown or extra text.";
                                 'source' => [
                                     'type' => strpos($imageInput, 'http') === 0 ? 'url' : 'base64',
                                     'url' => strpos($imageInput, 'http') === 0 ? $imageInput : null,
-                                    'media_type' => strpos($imageInput, 'http') === 0 ? 'image/jpeg' : 'image/jpeg',
+                                    'media_type' => strpos($imageInput, 'http') === 0 ? 'image/jpeg' : $mimeType,
                                     'data' => strpos($imageInput, 'http') === 0 ? null : $imageInput,
                                 ],
                             ],

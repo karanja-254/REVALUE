@@ -330,18 +330,17 @@ Super Admin Can Override Price (Audit Trail)
 
 ## Pricing Formula
 
-For items with Jiji market data:
+For items with market reference data:
 
 ```
-suggested_price = jiji_median_price * random(0.80, 0.90)
+suggested_price = median_price * 0.85
 ```
 
-This ensures ReValue undercuts Jiji slightly to be competitive.
+Fixed multiplier ensures deterministic pricing and replicability. ReValue undercuts market median by 15% to be competitive.
 
 **Example:**
-- Jiji median for Electronics/Good condition: KSh 28,000
-- Random multiplier: 0.85
-- ReValue suggested price: KSh 23,800
+- Market median for Electronics/Good condition: KSh 28,000
+- ReValue suggested price: KSh 23,800 (28,000 × 0.85)
 
 ---
 

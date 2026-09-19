@@ -17,12 +17,13 @@ class ProcessListingWithAI implements ShouldQueue
     public function __construct(
         public Listing $listing,
         public string $imageInput,
+        public string $mimeType = 'image/jpeg',
     ) {}
 
     public function handle(PricingService $pricingService): void
     {
         try {
-            $pricingService->processListing($this->listing, $this->imageInput);
+            $pricingService->processListing($this->listing, $this->imageInput, $this->mimeType);
         } catch (\Exception $e) {
             \Log::error('ProcessListingWithAI failed', [
                 'listing_id' => $this->listing->id,
