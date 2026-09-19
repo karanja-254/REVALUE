@@ -96,4 +96,9 @@ class Listing extends Model
     {
         return $this->hasMany(PriceOverride::class);
     }
+
+    public function manualReview(): HasOne
+    {
+        return $this->hasOne(ManualReview::class);
+    }
 }
