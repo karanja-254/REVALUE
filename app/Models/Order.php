@@ -6,6 +6,7 @@ use Database\Factories\OrderFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Order extends Model
@@ -72,6 +73,11 @@ class Order extends Model
         'delivery_pin',
         'pickup_verified_at',
         'delivery_verified_at',
+        // Delivery location (Maps/Logistics, Person 4).
+        'delivery_address',
+        'delivery_latitude',
+        'delivery_longitude',
+        'delivery_notes',
     ];
 
     /** @var list<string> */
@@ -92,7 +98,14 @@ class Order extends Model
             'total_amount' => 'decimal:2',
             'pickup_verified_at' => 'datetime',
             'delivery_verified_at' => 'datetime',
+            'delivery_latitude' => 'float',
+            'delivery_longitude' => 'float',
         ];
+    }
+
+    public function hasDeliveryLocation(): bool
+    {
+        return $this->delivery_latitude !== null && $this->delivery_longitude !== null;
     }
 
     public function listing(): BelongsTo
@@ -108,5 +121,70 @@ class Order extends Model
     public function sellerPayout(): HasOne
     {
         return $this->hasOne(SellerPayout::class);
+    }
+
+    /**
+     * The seller (owner of the listing). Resolved through the listing
+     * relation; eager-load `listing.user` to avoid extra queries.
+     */
+    public function seller(): ?User
+    {
+        return $this->listing?->user;
+    }
+
+    public function routeStops(): HasMany
+    {
+        return $this->hasMany(RouteStop::class);
+    }
+
+    public function pickupStop(): HasOne
+    {
+        return $this->hasOne(RouteStop::class)->where('type', RouteStop::TYPE_PICKUP);
+    }
+
+    public function deliveryStop(): HasOne
+    {
+        return $this->hasOne(RouteStop::class)->where('type', RouteStop::TYPE_DELIVERY);
+    }
+
+    /**
+     * Ordered list of the logistics milestones for buyer/seller tracking.
+     *
+     * @return list<array{key: string, label: string, done: bool, current: bool}>
+     */
+    public function trackingSteps(): array
+    {
+        $milestones = [
+            self::STATUS_PAID => 'Payment confirmed',
+            self::STATUS_SCHEDULED => 'Pickup scheduled',
+            self::STATUS_PICKED_UP => 'Picked up from seller',
+            self::STATUS_OUT_FOR_DELIVERY => 'Out for delivery',
+            self::STATUS_COMPLETED => 'Delivered',
+        ];
+
+        $currentIndex = array_search($this->order_status, array_keys($milestones), true);
+
+        $steps = [];
+        $i = 0;
+        foreach ($milestones as $key => $label) {
+            $done = $currentIndex !== false && $i < $currentIndex;
+            $current = $key === $this->order_status;
+
+            // Completed order: every milestone is done.
+            if ($this->order_status === self::STATUS_COMPLETED) {
+                $done = true;
+                $current = false;
+            }
+
+            $steps[] = [
+                'key' => $key,
+                'label' => $label,
+                'done' => $done,
+                'current' => $current,
+            ];
+            $i++;
+        }
+
+        return $steps;
     }
 }

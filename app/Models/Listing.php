@@ -64,6 +64,11 @@ class Listing extends Model
         'suggested_price',
         'final_price',
         'status',
+        // Pickup location (Maps/Logistics, Person 4).
+        'pickup_address',
+        'pickup_latitude',
+        'pickup_longitude',
+        'pickup_notes',
     ];
 
     /**
@@ -74,7 +79,14 @@ class Listing extends Model
         return [
             'suggested_price' => 'decimal:2',
             'final_price' => 'decimal:2',
+            'pickup_latitude' => 'float',
+            'pickup_longitude' => 'float',
         ];
+    }
+
+    public function hasPickupLocation(): bool
+    {
+        return $this->pickup_latitude !== null && $this->pickup_longitude !== null;
     }
 
     public function user(): BelongsTo
