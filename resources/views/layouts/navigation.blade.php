@@ -15,6 +15,14 @@
                     <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                         {{ __('Dashboard') }}
                     </x-nav-link>
+                    <x-nav-link :href="route('tracking.index')" :active="request()->routeIs('tracking.*')">
+                        {{ __('My deliveries') }}
+                    </x-nav-link>
+                    @if(Auth::user()->isLogistics() || Auth::user()->isAdmin())
+                        <x-nav-link :href="route('logistics.dashboard')" :active="request()->routeIs('logistics.*')">
+                            {{ __('Logistics') }}
+                        </x-nav-link>
+                    @endif
                 </div>
             </div>
 
@@ -70,6 +78,14 @@
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('tracking.index')" :active="request()->routeIs('tracking.*')">
+                {{ __('My deliveries') }}
+            </x-responsive-nav-link>
+            @if(Auth::user()->isLogistics() || Auth::user()->isAdmin())
+                <x-responsive-nav-link :href="route('logistics.dashboard')" :active="request()->routeIs('logistics.*')">
+                    {{ __('Logistics') }}
+                </x-responsive-nav-link>
+            @endif
         </div>
 
         <!-- Responsive Settings Options -->

@@ -6,6 +6,7 @@ namespace App\Models;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -85,6 +86,19 @@ class User extends Authenticatable
     public function sellerPayouts(): HasMany
     {
         return $this->hasMany(SellerPayout::class, 'seller_id');
+    }
+
+    /**
+     * Routes this user is assigned to drive (Maps/Logistics, Person 4).
+     */
+    public function driverRoutes(): HasMany
+    {
+        return $this->hasMany(LogisticsRoute::class, 'driver_id');
+    }
+
+    public function driverLocation(): HasOne
+    {
+        return $this->hasOne(DriverLocation::class);
     }
 
     public function hasRole(string $role): bool

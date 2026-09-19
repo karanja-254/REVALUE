@@ -40,4 +40,17 @@ return [
         'model' => env('ANTHROPIC_MODEL', 'claude-3-5-sonnet-20241022'),
     ],
 
+    /*
+    | Google Maps (Maps/Logistics, Person 4). The JavaScript key is used by the
+    | browser to render maps and draw routes. Leave blank in local/dev and the
+    | UI degrades gracefully to a coordinate list instead of a live map.
+    */
+    'google_maps' => [
+        'key' => env('GOOGLE_MAPS_API_KEY'),
+        'default_center' => [
+            'lat' => (float) env('MAP_DEFAULT_LAT', -1.286389),
+            'lng' => (float) env('MAP_DEFAULT_LNG', 36.817223),
+        ],
+    ],
+
 ];
