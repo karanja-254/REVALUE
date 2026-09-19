@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\DuplicateChargeRequiresRefundException;
 use App\Services\OrderPaymentService;
 use App\Services\PaystackService;
 use Illuminate\Http\JsonResponse;
@@ -31,6 +32,11 @@ class PaystackWebhookController extends Controller
 
         try {
             $payments->applyVerifiedPayload($reference, is_array($data) ? $data : []);
+        } catch (DuplicateChargeRequiresRefundException $exception) {
+            return response()->json([
+                'message' => $exception->getMessage(),
+                'refund_required' => true,
+            ]);
         } catch (Throwable $exception) {
             report($exception);
 

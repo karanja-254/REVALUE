@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Exceptions\DuplicateChargeRequiresRefundException;
 use App\Models\Listing;
 use App\Models\Order;
 use App\Models\Payment;
@@ -69,9 +70,9 @@ class OrderPaymentService
             $listing = Listing::query()->lockForUpdate()->findOrFail($order->listing_id);
 
             if (! $listing->isSell() || $listing->status === Listing::STATUS_SOLD) {
-                $this->failOrder($order, $reference, $payload);
+                $this->flagRefundRequired($order, $reference, $payload);
 
-                return [$order->fresh(), 'This listing is no longer available to buy.'];
+                return [$order->fresh(['listing', 'buyer']), 'refund_required'];
             }
 
             $this->recordPayment($order, $reference, $payload, Payment::STATUS_PAID);
@@ -97,6 +98,10 @@ class OrderPaymentService
             return [$order->fresh(['listing', 'buyer', 'sellerPayout']), null];
         });
 
+        if ($error === 'refund_required') {
+            throw new DuplicateChargeRequiresRefundException($order);
+        }
+
         if ($error !== null) {
             throw new RuntimeException($error);
         }
@@ -111,6 +116,22 @@ class OrderPaymentService
     {
         $this->recordPayment($order, $reference, $payload, Payment::STATUS_FAILED);
         $order->update(['payment_status' => Order::PAYMENT_FAILED]);
+    }
+
+    /**
+     * A later Paystack success after another buyer already won must not be
+     * labelled "failed". The charge happened; admin must refund it.
+     *
+     * @param  array<string, mixed>  $payload
+     */
+    private function flagRefundRequired(Order $order, string $reference, array $payload): void
+    {
+        $this->recordPayment($order, $reference, $payload, Payment::STATUS_REFUND_REQUIRED);
+
+        $order->update([
+            'payment_status' => Order::PAYMENT_REFUND_REQUIRED,
+            'order_status' => Order::STATUS_CANCELLED,
+        ]);
     }
 
     /**

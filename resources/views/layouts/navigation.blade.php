@@ -14,6 +14,10 @@
                     <x-nav-link :href="route('organizations.index')" :active="request()->routeIs('organizations.*')">Charities</x-nav-link>
                     <x-nav-link :href="route('listings.mine')" :active="request()->routeIs('listings.mine')">My items</x-nav-link>
                     <x-nav-link :href="route('orders.index')" :active="request()->routeIs('orders.*')">Orders</x-nav-link>
+                    <x-nav-link :href="route('tracking.index')" :active="request()->routeIs('tracking.*')">My deliveries</x-nav-link>
+                    @if (Auth::user()->isLogistics() || Auth::user()->isAdmin())
+                        <x-nav-link :href="route('logistics.dashboard')" :active="request()->routeIs('logistics.*')">Logistics</x-nav-link>
+                    @endif
                     @if (Auth::user()->isAdmin())
                         <x-nav-link :href="route('admin.organizations.index')" :active="request()->routeIs('admin.organizations.*')">Verify charities</x-nav-link>
                         <x-nav-link :href="route('admin.payouts.index')" :active="request()->routeIs('admin.payouts.*')">Payouts</x-nav-link>
@@ -62,6 +66,10 @@
             <x-responsive-nav-link :href="route('organizations.index')">Charities</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('listings.mine')">My items</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('orders.index')">Orders</x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('tracking.index')" :active="request()->routeIs('tracking.*')">My deliveries</x-responsive-nav-link>
+            @if (Auth::user()->isLogistics() || Auth::user()->isAdmin())
+                <x-responsive-nav-link :href="route('logistics.dashboard')" :active="request()->routeIs('logistics.*')">Logistics</x-responsive-nav-link>
+            @endif
             @if (Auth::user()->isAdmin())
                 <x-responsive-nav-link :href="route('admin.organizations.index')">Verify charities</x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('admin.payouts.index')">Payouts</x-responsive-nav-link>

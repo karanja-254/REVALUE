@@ -37,7 +37,10 @@ class PayoutController extends Controller
 
     public function refund(Order $order): RedirectResponse
     {
-        abort_unless($order->payment_status === Order::PAYMENT_PAID, 422);
+        abort_unless(in_array($order->payment_status, [
+            Order::PAYMENT_PAID,
+            Order::PAYMENT_REFUND_REQUIRED,
+        ], true), 422);
 
         $order->update([
             'payment_status' => Order::PAYMENT_REFUNDED,

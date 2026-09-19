@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exceptions\DuplicateChargeRequiresRefundException;
 use App\Services\OrderPaymentService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,6 +25,10 @@ class PaystackCallbackController extends Controller
 
         try {
             $order = $payments->confirmReference($reference);
+        } catch (DuplicateChargeRequiresRefundException $exception) {
+            return redirect()
+                ->route('orders.show', $exception->order)
+                ->with('status', $exception->getMessage());
         } catch (Throwable $exception) {
             report($exception);
 

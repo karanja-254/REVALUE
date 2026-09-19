@@ -15,6 +15,8 @@ class Payment extends Model
 
     public const STATUS_REFUNDED = 'refunded';
 
+    public const STATUS_REFUND_REQUIRED = 'refund_required';
+
     /** @var list<string> */
     protected $fillable = [
         'order_id',

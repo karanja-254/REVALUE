@@ -24,5 +24,8 @@ class DatabaseSeeder extends Seeder
             'name' => 'Test User',
             'email' => 'test@example.com',
         ]);
+
+        // Maps/Logistics (Person 4) demo data — development only.
+        $this->call(LogisticsDemoSeeder::class);
     }
 }

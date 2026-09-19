@@ -98,6 +98,19 @@ class User extends Authenticatable
         return $this->hasMany(Review::class, 'reviewer_id');
     }
 
+    /**
+     * Routes this user is assigned to drive (Maps/Logistics, Person 4).
+     */
+    public function driverRoutes(): HasMany
+    {
+        return $this->hasMany(LogisticsRoute::class, 'driver_id');
+    }
+
+    public function driverLocation(): HasOne
+    {
+        return $this->hasOne(DriverLocation::class);
+    }
+
     public function hasRole(string $role): bool
     {
         return $this->role === $role;

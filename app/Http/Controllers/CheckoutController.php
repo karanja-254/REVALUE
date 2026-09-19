@@ -7,7 +7,9 @@ use App\Models\Order;
 use App\Services\PaystackService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use RuntimeException;
 use Throwable;
 
@@ -17,40 +19,78 @@ class CheckoutController extends Controller
     {
         $buyer = $request->user();
 
-        abort_unless($listing->isSell(), 422, 'Only sell listings can be purchased.');
-        abort_unless($listing->isAvailable(), 422, 'This item is no longer available.');
         abort_if($listing->user_id === $buyer->id, 403, 'You cannot buy your own listing.');
 
-        $itemPrice = (float) ($listing->final_price ?? $listing->suggested_price);
+        $order = DB::transaction(function () use ($listing, $buyer) {
+            $listing = Listing::query()->lockForUpdate()->findOrFail($listing->id);
 
-        abort_if($itemPrice <= 0, 422, 'This listing does not have a locked ReValue price yet.');
+            if (! $listing->isSell()) {
+                throw ValidationException::withMessages([
+                    'checkout' => 'Only sell listings can be purchased.',
+                ]);
+            }
 
-        $deliveryFee = (float) config('revalue.fees.delivery');
-        $serviceFee = (float) config('revalue.fees.service');
-        $total = $itemPrice + $deliveryFee + $serviceFee;
+            if (! $listing->isAvailable()) {
+                throw ValidationException::withMessages([
+                    'checkout' => 'This item is no longer available.',
+                ]);
+            }
 
-        $order = Order::query()
-            ->where('listing_id', $listing->id)
-            ->where('buyer_id', $buyer->id)
-            ->where('payment_status', Order::PAYMENT_PENDING)
-            ->latest()
-            ->first();
+            $itemPrice = (float) ($listing->final_price ?? $listing->suggested_price);
 
-        if ($order === null) {
-            $order = Order::create([
-                'listing_id' => $listing->id,
-                'buyer_id' => $buyer->id,
-                'item_price' => $itemPrice,
-                'delivery_fee' => $deliveryFee,
-                'service_fee' => $serviceFee,
-                'total_amount' => $total,
-                'payment_reference' => $this->uniqueReference(),
-                'payment_status' => Order::PAYMENT_PENDING,
-                'order_status' => Order::STATUS_PENDING_PAYMENT,
-            ]);
-        } elseif (! $order->payment_reference) {
-            $order->update(['payment_reference' => $this->uniqueReference()]);
-        }
+            if ($itemPrice <= 0) {
+                throw ValidationException::withMessages([
+                    'checkout' => 'This listing does not have a locked ReValue price yet.',
+                ]);
+            }
+
+            $active = Order::query()
+                ->where('listing_id', $listing->id)
+                ->whereIn('payment_status', [Order::PAYMENT_PENDING, Order::PAYMENT_PAID])
+                ->lockForUpdate()
+                ->get();
+
+            if ($active->contains(fn (Order $existing) => $existing->buyer_id !== $buyer->id)) {
+                throw ValidationException::withMessages([
+                    'checkout' => 'This item is reserved by another buyer.',
+                ]);
+            }
+
+            if ($active->contains(fn (Order $existing) => $existing->payment_status === Order::PAYMENT_PAID)) {
+                throw ValidationException::withMessages([
+                    'checkout' => 'This item is no longer available.',
+                ]);
+            }
+
+            $order = $active->first(
+                fn (Order $existing) => $existing->buyer_id === $buyer->id
+                    && $existing->payment_status === Order::PAYMENT_PENDING
+            );
+
+            $deliveryFee = (float) config('revalue.fees.delivery');
+            $serviceFee = (float) config('revalue.fees.service');
+            $total = $itemPrice + $deliveryFee + $serviceFee;
+
+            if ($order === null) {
+                return Order::create([
+                    'listing_id' => $listing->id,
+                    'buyer_id' => $buyer->id,
+                    'item_price' => $itemPrice,
+                    'delivery_fee' => $deliveryFee,
+                    'service_fee' => $serviceFee,
+                    'total_amount' => $total,
+                    'payment_reference' => $this->uniqueReference(),
+                    'payment_status' => Order::PAYMENT_PENDING,
+                    'order_status' => Order::STATUS_PENDING_PAYMENT,
+                ]);
+            }
+
+            if (! $order->payment_reference) {
+                $order->update(['payment_reference' => $this->uniqueReference()]);
+            }
+
+            return $order->fresh();
+        });
 
         try {
             $session = $paystack->initialize(

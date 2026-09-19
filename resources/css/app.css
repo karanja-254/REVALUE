@@ -11,6 +11,7 @@
         @apply bg-sand font-sans text-ink antialiased;
     }
 
+    /* Alpine x-cloak: hide elements until Alpine initialises them. */
     [x-cloak] {
         display: none !important;
     }

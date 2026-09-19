@@ -24,6 +24,12 @@
                 </li>
             </ul>
 
+            @if ($order->requiresRefund())
+                <div class="mt-6 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900">
+                    Paystack charged this buyer, but another buyer already won the listing. Do not treat this as a failed payment. An admin must refund this charge.
+                </div>
+            @endif
+
             @if ($order->payment_status === 'paid')
                 <div class="mt-6 grid gap-3 sm:grid-cols-2">
                     @if (Auth::id() === $order->listing->user_id || Auth::user()->isAdmin())
@@ -53,7 +59,7 @@
                 </p>
             @endif
 
-            @if (Auth::user()->isAdmin() && $order->payment_status === 'paid')
+            @if (Auth::user()->isAdmin() && in_array($order->payment_status, ['paid', 'refund_required'], true))
                 <form method="POST" action="{{ route('admin.orders.refund', $order) }}" class="mt-6">
                     @csrf
                     <button class="rv-btn-ghost">Mark refunded</button>

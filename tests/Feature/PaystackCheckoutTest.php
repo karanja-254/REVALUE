@@ -224,4 +224,138 @@ class PaystackCheckoutTest extends TestCase
             'X-Paystack-Signature' => 'not-valid',
         ])->assertUnauthorized();
     }
+
+    public function test_second_buyer_cannot_start_checkout_while_listing_is_reserved(): void
+    {
+        Http::fake([
+            'https://api.paystack.co/transaction/initialize' => Http::response([
+                'status' => true,
+                'data' => [
+                    'authorization_url' => 'https://checkout.paystack.com/buyer-a',
+                    'access_code' => 'access',
+                    'reference' => 'RV-RESERVE',
+                ],
+            ], 200),
+        ]);
+
+        $listing = Listing::factory()->available()->create(['final_price' => 10500]);
+        $buyerA = User::factory()->create();
+        $buyerB = User::factory()->create();
+
+        $this->actingAs($buyerA)
+            ->post(route('checkout.store', $listing))
+            ->assertRedirect('https://checkout.paystack.com/buyer-a');
+
+        $this->actingAs($buyerB)
+            ->from(route('listings.show', $listing))
+            ->post(route('checkout.store', $listing))
+            ->assertRedirect(route('listings.show', $listing))
+            ->assertSessionHasErrors('checkout');
+
+        $this->assertSame(1, Order::query()->where('listing_id', $listing->id)->count());
+        $this->assertSame($buyerA->id, Order::query()->where('listing_id', $listing->id)->value('buyer_id'));
+    }
+
+    public function test_duplicate_successful_charge_is_flagged_for_refund_not_failed(): void
+    {
+        Http::fake([
+            'https://api.paystack.co/transaction/verify/RV-WIN' => Http::response([
+                'status' => true,
+                'data' => [
+                    'status' => 'success',
+                    'reference' => 'RV-WIN',
+                    'amount' => 1140000,
+                    'currency' => 'KES',
+                ],
+            ], 200),
+            'https://api.paystack.co/transaction/verify/RV-LOSE' => Http::response([
+                'status' => true,
+                'data' => [
+                    'status' => 'success',
+                    'reference' => 'RV-LOSE',
+                    'amount' => 1140000,
+                    'currency' => 'KES',
+                ],
+            ], 200),
+        ]);
+
+        $listing = Listing::factory()->available()->create(['final_price' => 10500]);
+        $winner = User::factory()->create();
+        $loser = User::factory()->create();
+
+        $winningOrder = Order::factory()->for($listing)->create([
+            'buyer_id' => $winner->id,
+            'item_price' => 10500,
+            'delivery_fee' => 600,
+            'service_fee' => 300,
+            'total_amount' => 11400,
+            'payment_reference' => 'RV-WIN',
+        ]);
+        $losingOrder = Order::factory()->for($listing)->create([
+            'buyer_id' => $loser->id,
+            'item_price' => 10500,
+            'delivery_fee' => 600,
+            'service_fee' => 300,
+            'total_amount' => 11400,
+            'payment_reference' => 'RV-LOSE',
+        ]);
+
+        $this->actingAs($winner)
+            ->get(route('paystack.callback', ['reference' => 'RV-WIN']))
+            ->assertRedirect(route('orders.show', $winningOrder));
+
+        $this->actingAs($loser)
+            ->get(route('paystack.callback', ['reference' => 'RV-LOSE']))
+            ->assertRedirect(route('orders.show', $losingOrder));
+
+        $this->assertSame(Order::PAYMENT_PAID, $winningOrder->fresh()->payment_status);
+        $this->assertSame(Listing::STATUS_SOLD, $listing->fresh()->status);
+        $this->assertSame(Order::PAYMENT_REFUND_REQUIRED, $losingOrder->fresh()->payment_status);
+        $this->assertNotSame(Order::PAYMENT_FAILED, $losingOrder->fresh()->payment_status);
+        $this->assertDatabaseHas('payments', [
+            'reference' => 'RV-LOSE',
+            'status' => Payment::STATUS_REFUND_REQUIRED,
+        ]);
+        $this->assertDatabaseMissing('seller_payouts', [
+            'order_id' => $losingOrder->id,
+        ]);
+    }
+
+    public function test_ksh_5_override_checkout_uses_price_plus_fees_in_subunits(): void
+    {
+        Http::fake([
+            'https://api.paystack.co/transaction/initialize' => Http::response([
+                'status' => true,
+                'data' => [
+                    'authorization_url' => 'https://checkout.paystack.com/ksh5',
+                    'access_code' => 'access',
+                    'reference' => 'RV-KSH5',
+                ],
+            ], 200),
+        ]);
+
+        $buyer = User::factory()->create();
+        $listing = Listing::factory()->available()->create([
+            'suggested_price' => 8000,
+            'final_price' => 5,
+        ]);
+
+        $this->actingAs($buyer)
+            ->post(route('checkout.store', $listing))
+            ->assertRedirect('https://checkout.paystack.com/ksh5');
+
+        $this->assertDatabaseHas('orders', [
+            'listing_id' => $listing->id,
+            'item_price' => 5,
+            'delivery_fee' => 600,
+            'service_fee' => 300,
+            'total_amount' => 905,
+        ]);
+
+        Http::assertSent(function ($request) {
+            return $request->url() === 'https://api.paystack.co/transaction/initialize'
+                && $request['amount'] === 90500
+                && $request['currency'] === 'KES';
+        });
+    }
 }
