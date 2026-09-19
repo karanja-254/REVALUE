@@ -64,6 +64,8 @@ class Listing extends Model
         'suggested_price',
         'final_price',
         'status',
+        'processing_status',
+        'ai_metadata',
     ];
 
     /**
@@ -74,6 +76,7 @@ class Listing extends Model
         return [
             'suggested_price' => 'decimal:2',
             'final_price' => 'decimal:2',
+            'ai_metadata' => 'json',
         ];
     }
 
@@ -90,5 +93,15 @@ class Listing extends Model
     public function latestOrder(): HasOne
     {
         return $this->hasOne(Order::class)->latestOfMany();
+    }
+
+    public function priceOverrides(): HasMany
+    {
+        return $this->hasMany(PriceOverride::class);
+    }
+
+    public function manualReview(): HasOne
+    {
+        return $this->hasOne(ManualReview::class);
     }
 }

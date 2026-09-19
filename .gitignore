@@ -22,3 +22,13 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Claude Code development/agent files
+.claude/cache/
+.claude/docs/
+.claude/flags/
+.claude/memory/
+.claude/prompts/
+.claude/templates/
+.claude/whatsapp-guide.txt
+composer.phar
