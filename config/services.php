@@ -35,6 +35,14 @@ return [
         ],
     ],
 
+    'paystack' => [
+        'secret' => env('PAYSTACK_SECRET_KEY'),
+        'public' => env('PAYSTACK_PUBLIC_KEY'),
+        'base_url' => env('PAYSTACK_BASE_URL', 'https://api.paystack.co'),
+        'callback' => env('PAYSTACK_CALLBACK_URL', 'https://karanja.ninja/api/paystack/callback'),
+        'currency' => env('PAYSTACK_CURRENCY', 'KES'),
+    ],
+
     'anthropic' => [
         'key' => env('ANTHROPIC_API_KEY'),
         'model' => env('ANTHROPIC_MODEL', 'claude-3-5-sonnet-20241022'),

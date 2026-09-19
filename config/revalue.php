@@ -20,4 +20,17 @@ return [
         'password' => env('SUPER_ADMIN_PASSWORD', 'password'),
     ],
 
+    'fees' => [
+        'delivery' => (int) env('REVALUE_DELIVERY_FEE', 600),
+        'service' => (int) env('REVALUE_SERVICE_FEE', 300),
+    ],
+
+    'paystack' => [
+        'secret_key' => env('PAYSTACK_SECRET_KEY'),
+        'public_key' => env('PAYSTACK_PUBLIC_KEY'),
+        'base_url' => env('PAYSTACK_BASE_URL', 'https://api.paystack.co'),
+        'callback_url' => env('PAYSTACK_CALLBACK_URL', 'https://karanja.ninja/api/paystack/callback'),
+        'currency' => env('PAYSTACK_CURRENCY', 'KES'),
+    ],
+
 ];

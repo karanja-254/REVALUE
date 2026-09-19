@@ -2,61 +2,142 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreListingRequest;
 use App\Jobs\ProcessListingWithAI;
 use App\Models\Listing;
 use App\Models\ManualReview;
+use App\Support\ListingOptions;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\View\View;
 
 class ListingController extends Controller
 {
     use AuthorizesRequests;
 
-    public function store(Request $request)
+    public function index(Request $request): View
     {
-        $validated = $request->validate([
-            'type' => 'required|in:sell,donate,recycle',
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'image' => 'required|image|mimes:jpeg,png,webp|max:5120',
+        $type = $request->string('type')->toString();
+
+        if (! in_array($type, Listing::TYPES, true)) {
+            $type = Listing::TYPE_SELL;
+        }
+
+        $listings = Listing::query()
+            ->with('user')
+            ->where('type', $type)
+            ->where('status', Listing::STATUS_AVAILABLE)
+            ->latest()
+            ->paginate(9)
+            ->withQueryString();
+
+        return view('listings.index', [
+            'listings' => $listings,
+            'type' => $type,
         ]);
+    }
 
-        // For MVP, save image locally. In production, use Cloudinary/S3
-        $imagePath = $request->file('image')->store('listings', 'public');
+    public function mine(Request $request): View
+    {
+        return view('listings.mine', [
+            'listings' => $request->user()->listings()->latest()->paginate(10),
+        ]);
+    }
 
-        // Create listing in draft
+    public function create(Request $request): View
+    {
+        $type = $request->string('type')->toString();
+
+        if (! in_array($type, Listing::TYPES, true)) {
+            $type = Listing::TYPE_SELL;
+        }
+
+        return view('listings.create', [
+            'type' => $type,
+            'categories' => ListingOptions::categoryLabels(),
+            'conditions' => ListingOptions::conditionLabels(),
+        ]);
+    }
+
+    public function store(StoreListingRequest $request): RedirectResponse|JsonResponse
+    {
+        $data = $request->validated();
+        $type = $data['type'];
+        $imagePath = null;
+
+        if ($request->hasFile('image')) {
+            $imagePath = $request->file('image')->store('listings', 'public');
+        }
+
+        if ($request->wantsJson()) {
+            $listing = Listing::create([
+                'user_id' => $request->user()->id,
+                'type' => $type,
+                'title' => $data['title'],
+                'description' => $data['description'] ?? null,
+                'image_path' => $imagePath,
+                'status' => Listing::STATUS_DRAFT,
+                'processing_status' => 'pending',
+            ]);
+
+            $this->dispatchAiProcessing($request, $listing, $imagePath);
+
+            return response()->json([
+                'message' => 'Listing created. AI is analyzing your item...',
+                'listing_id' => $listing->id,
+            ], 201);
+        }
+
         $listing = Listing::create([
             'user_id' => $request->user()->id,
-            'type' => $validated['type'],
-            'title' => $validated['title'],
-            'description' => $validated['description'],
+            'type' => $type,
+            'title' => $data['title'],
+            'description' => $data['description'] ?? null,
+            'category' => $data['category'],
+            'condition' => $data['condition'],
             'image_path' => $imagePath,
-            'status' => 'draft',
+            'suggested_price' => null,
+            'final_price' => null,
+            'status' => $type === Listing::TYPE_SELL
+                ? Listing::STATUS_DRAFT
+                : Listing::STATUS_AVAILABLE,
             'processing_status' => 'pending',
         ]);
 
-        // Read image file and encode for AI processing
-        $imageContent = \Storage::disk('public')->get($imagePath);
-        $imageBase64 = base64_encode($imageContent);
-        $mimeType = $request->file('image')->getMimeType();
+        if ($type === Listing::TYPE_SELL && $imagePath) {
+            $this->dispatchAiProcessing($request, $listing, $imagePath);
+        }
 
-        // Dispatch AI processing job
-        ProcessListingWithAI::dispatch($listing, $imageBase64, $mimeType);
+        $message = match ($type) {
+            Listing::TYPE_SELL => 'Listing saved. ReValue pricing will lock a fixed offer next — no bargaining after you accept.',
+            Listing::TYPE_DONATE => 'Donation listed. Verified charities can now claim it. You will not pay for collection.',
+            default => 'Item listed for recycling. Verified recyclers can arrange collection.',
+        };
 
-        return response()->json([
-            'message' => 'Listing created. AI is analyzing your item...',
-            'listing_id' => $listing->id,
-        ], 201);
+        return redirect()
+            ->route('listings.show', $listing)
+            ->with('status', $message);
     }
 
-    public function show(Listing $listing)
+    public function show(Request $request, Listing $listing): View|JsonResponse
     {
-        $this->authorize('view', $listing);
+        if ($request->wantsJson()) {
+            $this->authorize('view', $listing);
 
-        return response()->json($listing->load('manualReview', 'priceOverrides'));
+            return response()->json($listing->load('manualReview', 'priceOverrides'));
+        }
+
+        $listing->load(['user', 'donationClaim.organization']);
+
+        return view('listings.show', [
+            'listing' => $listing,
+        ]);
     }
 
-    public function acceptPrice(Request $request, Listing $listing)
+    public function acceptPrice(Request $request, Listing $listing): JsonResponse
     {
         if ($listing->user_id !== $request->user()->id) {
             return response()->json(['error' => 'Unauthorized'], 403);
@@ -79,7 +160,7 @@ class ListingController extends Controller
         ]);
     }
 
-    public function requestReview(Request $request, Listing $listing)
+    public function requestReview(Request $request, Listing $listing): JsonResponse
     {
         if ($listing->user_id !== $request->user()->id) {
             return response()->json(['error' => 'Unauthorized'], 403);
@@ -98,7 +179,7 @@ class ListingController extends Controller
         ManualReview::create([
             'listing_id' => $listing->id,
             'status' => 'pending',
-            'notes' => 'Seller request: ' . ($validated['reason'] ?? 'No reason provided'),
+            'notes' => 'Seller request: '.($validated['reason'] ?? 'No reason provided'),
         ]);
 
         $listing->update(['status' => 'under_review']);
@@ -106,5 +187,18 @@ class ListingController extends Controller
         return response()->json([
             'message' => 'Your item has been submitted for manual pricing review. An admin will review it shortly.',
         ]);
+    }
+
+    private function dispatchAiProcessing(Request $request, Listing $listing, ?string $imagePath): void
+    {
+        if (! $imagePath || ! $request->hasFile('image')) {
+            return;
+        }
+
+        $imageContent = Storage::disk('public')->get($imagePath);
+        $imageBase64 = base64_encode($imageContent);
+        $mimeType = $request->file('image')->getMimeType();
+
+        ProcessListingWithAI::dispatch($listing, $imageBase64, $mimeType);
     }
 }

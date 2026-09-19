@@ -22,12 +22,15 @@ class Order extends Model
 
     public const PAYMENT_REFUNDED = 'refunded';
 
+    public const PAYMENT_REFUND_REQUIRED = 'refund_required';
+
     /** @var list<string> */
     public const PAYMENT_STATUSES = [
         self::PAYMENT_PENDING,
         self::PAYMENT_PAID,
         self::PAYMENT_FAILED,
         self::PAYMENT_REFUNDED,
+        self::PAYMENT_REFUND_REQUIRED,
     ];
 
     public const STATUS_PENDING_PAYMENT = 'pending_payment';
@@ -123,6 +126,16 @@ class Order extends Model
         return $this->hasOne(SellerPayout::class);
     }
 
+    public function payments(): HasMany
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    public function review(): HasOne
+    {
+        return $this->hasOne(Review::class);
+    }
+
     /**
      * The seller (owner of the listing). Resolved through the listing
      * relation; eager-load `listing.user` to avoid extra queries.
@@ -186,5 +199,15 @@ class Order extends Model
         }
 
         return $steps;
+    }
+
+    public function isCompleted(): bool
+    {
+        return $this->order_status === self::STATUS_COMPLETED;
+    }
+
+    public function requiresRefund(): bool
+    {
+        return $this->payment_status === self::PAYMENT_REFUND_REQUIRED;
     }
 }

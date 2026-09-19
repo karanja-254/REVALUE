@@ -88,6 +88,16 @@ class User extends Authenticatable
         return $this->hasMany(SellerPayout::class, 'seller_id');
     }
 
+    public function organization(): HasOne
+    {
+        return $this->hasOne(Organization::class);
+    }
+
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class, 'reviewer_id');
+    }
+
     /**
      * Routes this user is assigned to drive (Maps/Logistics, Person 4).
      */

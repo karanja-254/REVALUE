@@ -2,7 +2,55 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Alpine x-cloak: hide elements until Alpine initialises them. */
-[x-cloak] {
-    display: none !important;
+@layer base {
+    html {
+        scroll-behavior: smooth;
+    }
+
+    body {
+        @apply bg-sand font-sans text-ink antialiased;
+    }
+
+    /* Alpine x-cloak: hide elements until Alpine initialises them. */
+    [x-cloak] {
+        display: none !important;
+    }
+}
+
+@layer components {
+    .rv-btn {
+        @apply inline-flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium transition;
+    }
+
+    .rv-btn-primary {
+        @apply rv-btn bg-clay text-white shadow-red hover:bg-[#e03126] active:bg-[#c92d23];
+    }
+
+    .rv-btn-accent {
+        @apply rv-btn bg-forest text-white hover:bg-forest-mid;
+    }
+
+    .rv-btn-ghost {
+        @apply rv-btn border border-sand-dark bg-white text-forest hover:bg-[#fdeae8]/50;
+    }
+
+    .rv-card {
+        @apply overflow-hidden rounded-2xl bg-white shadow-card ring-1 ring-sand-dark/80;
+    }
+
+    .rv-input {
+        @apply mt-1 block w-full rounded-lg border-sand-dark bg-white text-ink shadow-none focus:border-clay focus:ring-clay/40;
+    }
+
+    .rv-label {
+        @apply text-sm font-medium text-forest;
+    }
+
+    .rv-section-title {
+        @apply flex items-center gap-3;
+    }
+
+    .rv-section-bar {
+        @apply h-8 w-1 rounded-full bg-clay;
+    }
 }
