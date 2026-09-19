@@ -49,4 +49,25 @@ class ListingController extends Controller
 
         return response()->json($listing->load('manualReview', 'priceOverrides'));
     }
+
+    public function acceptPrice(Listing $listing)
+    {
+        $this->authorize('view', $listing);
+
+        if ($listing->suggested_price === null) {
+            return response()->json([
+                'error' => 'No suggested price available. Item requires manual review.',
+            ], 422);
+        }
+
+        $listing->update([
+            'final_price' => $listing->suggested_price,
+            'status' => 'available',
+        ]);
+
+        return response()->json([
+            'message' => 'Price accepted. Item is now available for purchase.',
+            'listing' => $listing,
+        ]);
+    }
 }
