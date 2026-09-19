@@ -51,9 +51,11 @@ class ListingController extends Controller
         return response()->json($listing->load('manualReview', 'priceOverrides'));
     }
 
-    public function acceptPrice(Listing $listing)
+    public function acceptPrice(Request $request, Listing $listing)
     {
-        $this->authorize('view', $listing);
+        if ($listing->user_id !== $request->user()->id) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
 
         if ($listing->suggested_price === null) {
             return response()->json([
@@ -74,7 +76,9 @@ class ListingController extends Controller
 
     public function requestReview(Request $request, Listing $listing)
     {
-        $this->authorize('view', $listing);
+        if ($listing->user_id !== $request->user()->id) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
 
         $validated = $request->validate([
             'reason' => 'nullable|string|max:500',

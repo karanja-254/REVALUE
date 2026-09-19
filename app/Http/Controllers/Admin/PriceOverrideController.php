@@ -48,8 +48,11 @@ class PriceOverrideController extends Controller
         ]);
     }
 
-    public function history(Listing $listing)
+    public function history(Request $request, Listing $listing)
     {
+        if (!in_array($request->user()->role, ['admin', 'super_admin'])) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
 
         $overrides = $listing->priceOverrides()
             ->with('admin')
