@@ -1,0 +1,24 @@
+tasks:
+  - name: Setup
+    init: |
+      composer install
+      npm install
+      touch database.sqlite
+      chmod 666 database.sqlite
+      php artisan key:generate
+      php artisan migrate:fresh --seed
+    command: |
+      npm run dev &
+      php artisan serve --host=0.0.0.0 --port=8000
+
+vscode:
+  extensions:
+    - bmewburn.vscode-intelephense-client
+    - esbenp.prettier-vscode
+    - ecmel.vscode-html-css
+
+ports:
+  - port: 8000
+    onOpen: open-browser
+  - port: 5173
+    onOpen: ignore
