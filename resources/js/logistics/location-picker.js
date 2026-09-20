@@ -38,8 +38,20 @@ class LocationPicker {
 
         if (this.mapsKey && this.canvas) {
             this.noMapHint?.classList.add('hidden');
+
+            // Google may reject the key after the script has loaded.
+            window.addEventListener('revalue:maps-auth-failed', () => this.showNoMapFallback(), { once: true });
+
             loadGoogleMaps(this.mapsKey)
-                .then((maps) => this.initMap(maps))
+                .then((maps) => {
+                    if (window.__revalueMapsAuthFailed) {
+                        this.showNoMapFallback();
+
+                        return;
+                    }
+
+                    this.initMap(maps);
+                })
                 .catch(() => this.showNoMapFallback());
         } else {
             this.showNoMapFallback();
