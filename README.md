@@ -4,14 +4,14 @@ ReValue is a Kenyan web platform that helps people **sell, donate, or recycle un
 
 The platform handles:
 
-- item listing
-- AI-assisted item classification
+- item listing.
+- AI-assisted item classification.
 - fixed-price offers
-- buyer payments
+- buyer payments.
 - seller payout tracking
 - pickup and delivery verification
 - logistics tracking
-- charity donations
+- charity donations.
 - recycling
 - ratings and reputation
 
@@ -50,7 +50,7 @@ A seller uploads an item with photos and details.
 
 Example:
 
-- Samsung 43" Smart TV
+- Samsung 43" Smart TV.
 - Good condition
 
 AI helps identify the item and condition.
@@ -105,7 +105,7 @@ Items that are too damaged or unsuitable for resale can be routed to verified re
 
 Examples:
 
-- broken TVs
+- broken TVs.
 - damaged electronics
 - scrap
 - e-waste
