@@ -36,15 +36,15 @@ class PaystackCheckoutTest extends TestCase
             ->assertForbidden();
     }
 
-    public function test_buyer_is_sent_to_paystack_after_initialize(): void
+    public function test_buyer_is_sent_to_the_waiting_page_after_stk_initiation(): void
     {
         Http::fake([
-            'https://api.paystack.co/transaction/initialize' => Http::response([
+            'https://api.paystack.co/charge' => Http::response([
                 'status' => true,
                 'data' => [
-                    'authorization_url' => 'https://checkout.paystack.com/revalue-test',
-                    'access_code' => 'access',
+                    'status' => 'pay_offline',
                     'reference' => 'RV-TESTREF',
+                    'display_text' => 'Please complete the authorization process on your phone',
                 ],
             ], 200),
         ]);
@@ -55,8 +55,8 @@ class PaystackCheckoutTest extends TestCase
         ]);
 
         $this->actingAs($buyer)
-            ->post(route('checkout.store', $listing))
-            ->assertRedirect('https://checkout.paystack.com/revalue-test');
+            ->post(route('checkout.store', $listing), ['phone' => '0712345678'])
+            ->assertRedirect(route('checkout.waiting', Order::where('buyer_id', $buyer->id)->firstOrFail()));
 
         $this->assertDatabaseHas('orders', [
             'listing_id' => $listing->id,
@@ -228,13 +228,9 @@ class PaystackCheckoutTest extends TestCase
     public function test_second_buyer_cannot_start_checkout_while_listing_is_reserved(): void
     {
         Http::fake([
-            'https://api.paystack.co/transaction/initialize' => Http::response([
+            'https://api.paystack.co/charge' => Http::response([
                 'status' => true,
-                'data' => [
-                    'authorization_url' => 'https://checkout.paystack.com/buyer-a',
-                    'access_code' => 'access',
-                    'reference' => 'RV-RESERVE',
-                ],
+                'data' => ['status' => 'pay_offline', 'reference' => 'RV-RESERVE'],
             ], 200),
         ]);
 
@@ -243,12 +239,12 @@ class PaystackCheckoutTest extends TestCase
         $buyerB = User::factory()->create();
 
         $this->actingAs($buyerA)
-            ->post(route('checkout.store', $listing))
-            ->assertRedirect('https://checkout.paystack.com/buyer-a');
+            ->post(route('checkout.store', $listing), ['phone' => '0712345678'])
+            ->assertRedirect(route('checkout.waiting', Order::where('buyer_id', $buyerA->id)->firstOrFail()));
 
         $this->actingAs($buyerB)
             ->from(route('listings.show', $listing))
-            ->post(route('checkout.store', $listing))
+            ->post(route('checkout.store', $listing), ['phone' => '0722333444'])
             ->assertRedirect(route('listings.show', $listing))
             ->assertSessionHasErrors('checkout');
 
@@ -324,13 +320,9 @@ class PaystackCheckoutTest extends TestCase
     public function test_ksh_5_override_checkout_uses_price_plus_fees_in_subunits(): void
     {
         Http::fake([
-            'https://api.paystack.co/transaction/initialize' => Http::response([
+            'https://api.paystack.co/charge' => Http::response([
                 'status' => true,
-                'data' => [
-                    'authorization_url' => 'https://checkout.paystack.com/ksh5',
-                    'access_code' => 'access',
-                    'reference' => 'RV-KSH5',
-                ],
+                'data' => ['status' => 'pay_offline', 'reference' => 'RV-KSH5'],
             ], 200),
         ]);
 
@@ -341,8 +333,8 @@ class PaystackCheckoutTest extends TestCase
         ]);
 
         $this->actingAs($buyer)
-            ->post(route('checkout.store', $listing))
-            ->assertRedirect('https://checkout.paystack.com/ksh5');
+            ->post(route('checkout.store', $listing), ['phone' => '0712345678'])
+            ->assertRedirect(route('checkout.waiting', Order::where('buyer_id', $buyer->id)->firstOrFail()));
 
         $this->assertDatabaseHas('orders', [
             'listing_id' => $listing->id,
@@ -353,8 +345,41 @@ class PaystackCheckoutTest extends TestCase
         ]);
 
         Http::assertSent(function ($request) {
-            return $request->url() === 'https://api.paystack.co/transaction/initialize'
+            return $request->url() === 'https://api.paystack.co/charge'
                 && $request['amount'] === 90500
+                && $request['currency'] === 'KES';
+        });
+    }
+
+    public function test_demo_zero_fees_charge_only_the_item_price(): void
+    {
+        config(['revalue.fees.delivery' => 0, 'revalue.fees.service' => 0]);
+
+        Http::fake([
+            'https://api.paystack.co/charge' => Http::response([
+                'status' => true,
+                'data' => ['status' => 'pay_offline', 'reference' => 'RV-DEMO5'],
+            ], 200),
+        ]);
+
+        $buyer = User::factory()->create();
+        $listing = Listing::factory()->available()->create(['final_price' => 5]);
+
+        $this->actingAs($buyer)
+            ->post(route('checkout.store', $listing), ['phone' => '0712345678'])
+            ->assertRedirect(route('checkout.waiting', Order::where('buyer_id', $buyer->id)->firstOrFail()));
+
+        $this->assertDatabaseHas('orders', [
+            'listing_id' => $listing->id,
+            'item_price' => 5,
+            'delivery_fee' => 0,
+            'service_fee' => 0,
+            'total_amount' => 5,
+        ]);
+
+        Http::assertSent(function ($request) {
+            return $request->url() === 'https://api.paystack.co/charge'
+                && $request['amount'] === 500
                 && $request['currency'] === 'KES';
         });
     }

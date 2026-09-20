@@ -32,8 +32,10 @@ Route::get('/dashboard', DashboardController::class)
     ->name('dashboard');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/listings/create', [ListingController::class, 'create'])->name('listings.create');
-    Route::post('/listings', [ListingController::class, 'store'])->name('listings.store');
+    Route::middleware('not-logistics')->group(function () {
+        Route::get('/listings/create', [ListingController::class, 'create'])->name('listings.create');
+        Route::post('/listings', [ListingController::class, 'store'])->name('listings.store');
+    });
     Route::get('/my-listings', [ListingController::class, 'mine'])->name('listings.mine');
 
     Route::get('/charities/apply', [OrganizationController::class, 'create'])->name('organizations.create');
@@ -42,12 +44,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/charity-needs/create', [CharityNeedController::class, 'create'])->name('charity-needs.create');
     Route::post('/charity-needs', [CharityNeedController::class, 'store'])->name('charity-needs.store');
 
-    Route::post('/donations/{listing}/claim', [DonationClaimController::class, 'store'])->name('donations.claim');
+    Route::post('/donations/{listing}/claim', [DonationClaimController::class, 'store'])
+        ->middleware('not-logistics')
+        ->name('donations.claim');
 
     Route::get('/orders/{order}/review', [ReviewController::class, 'create'])->name('reviews.create');
     Route::post('/orders/{order}/review', [ReviewController::class, 'store'])->name('reviews.store');
 
     Route::post('/listings/{listing}/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+    Route::get('/checkout/{order}/waiting', [CheckoutController::class, 'waiting'])->name('checkout.waiting');
+    Route::get('/checkout/{order}/status', [CheckoutController::class, 'status'])->name('checkout.status');
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/failed', [OrderController::class, 'failed'])->name('orders.failed');
     Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');
@@ -66,6 +72,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/payouts', [PayoutController::class, 'index'])->name('payouts.index');
     Route::post('/payouts/{payout}/pay', [PayoutController::class, 'pay'])->name('payouts.pay');
     Route::post('/orders/{order}/refund', [PayoutController::class, 'refund'])->name('orders.refund');
+    Route::get('/manual-reviews', [ManualReviewController::class, 'index'])->name('manual-reviews.index');
+    Route::put('/manual-reviews/{review}/approve', [ManualReviewController::class, 'approve'])->name('manual-reviews.approve');
 });
 
 Route::middleware('auth')->group(function () {
@@ -73,13 +81,14 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    Route::put('/listings/{listing}/accept-price', [ListingController::class, 'acceptPrice']);
-    Route::put('/listings/{listing}/request-review', [ListingController::class, 'requestReview']);
+    Route::put('/listings/{listing}/accept-price', [ListingController::class, 'acceptPrice'])
+        ->name('listings.accept-price');
+    Route::put('/listings/{listing}/request-review', [ListingController::class, 'requestReview'])
+        ->name('listings.request-review');
 
     Route::prefix('admin')->group(function () {
-        Route::get('/manual-reviews', [ManualReviewController::class, 'index']);
-        Route::put('/manual-reviews/{review}/approve', [ManualReviewController::class, 'approve']);
-        Route::post('/listings/{listing}/override-price', [PriceOverrideController::class, 'store']);
+        Route::post('/listings/{listing}/override-price', [PriceOverrideController::class, 'store'])
+            ->name('admin.listings.override-price');
         Route::get('/listings/{listing}/price-history', [PriceOverrideController::class, 'history']);
     });
 });

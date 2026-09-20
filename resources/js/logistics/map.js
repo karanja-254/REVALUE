@@ -203,22 +203,67 @@ class LogisticsMap {
     }
 }
 
+/**
+ * Drop back to the server-rendered stop list. Used when the key is missing,
+ * rejected by Google, or the script cannot load — the driver still gets every
+ * address instead of Google's red "something went wrong" box.
+ */
+function showFallback(root, message = null) {
+    const fallback = root.querySelector('[data-map-fallback]');
+    const canvas = root.querySelector('[data-map-canvas]');
+
+    if (canvas) {
+        canvas.classList.add('hidden');
+        canvas.innerHTML = '';
+    }
+
+    if (fallback) {
+        fallback.classList.remove('hidden');
+
+        if (message && !fallback.querySelector('[data-map-error]')) {
+            const note = document.createElement('p');
+            note.dataset.mapError = '';
+            note.className = 'mb-3 text-xs text-amber-700';
+            note.textContent = message;
+            fallback.prepend(note);
+        }
+    }
+}
+
 export function initLogisticsMaps() {
     const roots = document.querySelectorAll('[data-logistics-map]');
     roots.forEach((root) => {
         const key = root.dataset.mapsKey;
         const fallback = root.querySelector('[data-map-fallback]');
+
         if (!key) {
             // No key: leave the server-rendered fallback list visible.
             if (fallback) fallback.classList.remove('hidden');
             return;
         }
+
+        const authMessage = 'Live map unavailable (Google rejected the API key). Showing stop locations as a list.';
+
+        // Google can reject the key after the script has already loaded.
+        window.addEventListener('revalue:maps-auth-failed', () => showFallback(root, authMessage), { once: true });
+
         loadGoogleMaps(key)
-            .then((maps) => new LogisticsMap(root, maps))
-            .catch(() => {
-                if (fallback) fallback.classList.remove('hidden');
-                const canvas = root.querySelector('[data-map-canvas]');
-                if (canvas) canvas.classList.add('hidden');
+            .then((maps) => {
+                if (window.__revalueMapsAuthFailed) {
+                    showFallback(root, authMessage);
+
+                    return;
+                }
+
+                new LogisticsMap(root, maps);
+            })
+            .catch((error) => {
+                showFallback(
+                    root,
+                    error?.message === 'google-maps-auth-failed'
+                        ? authMessage
+                        : 'Live map could not load. Showing stop locations as a list.'
+                );
             });
     });
 }

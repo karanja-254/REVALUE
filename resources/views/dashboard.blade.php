@@ -6,11 +6,17 @@
     <div class="mx-auto max-w-6xl px-4 py-8">
         <x-flash />
 
-        <div class="grid gap-3 sm:grid-cols-3">
-            <a href="{{ route('listings.create', ['type' => 'sell']) }}" class="rv-btn-primary">Sell something</a>
-            <a href="{{ route('listings.create', ['type' => 'donate']) }}" class="rv-btn-ghost">Donate something</a>
-            <a href="{{ route('listings.create', ['type' => 'recycle']) }}" class="rv-btn-accent">Recycle something</a>
-        </div>
+        @if (Auth::user()->canTrade())
+            <div class="grid gap-3 sm:grid-cols-3">
+                <a href="{{ route('listings.create', ['type' => 'sell']) }}" class="rv-btn-primary">Sell something</a>
+                <a href="{{ route('listings.create', ['type' => 'donate']) }}" class="rv-btn-ghost">Donate something</a>
+                <a href="{{ route('listings.create', ['type' => 'recycle']) }}" class="rv-btn-accent">Recycle something</a>
+            </div>
+        @else
+            <div class="grid gap-3">
+                <a href="{{ route('logistics.dashboard') }}" class="rv-btn-primary">Open logistics dashboard</a>
+            </div>
+        @endif
 
         <div class="mt-8 grid gap-4 sm:grid-cols-3">
             <div class="rv-card p-5">
@@ -75,10 +81,14 @@
                         </div>
                         <a href="{{ route('organizations.create') }}" class="mt-4 inline-block text-sm font-semibold text-forest underline">View application</a>
                     </div>
-                @else
+                @elseif (Auth::user()->canApplyAsOrganization())
                     <div class="rv-card p-5 text-sm text-forest/70">
                         Selling does not need extra KYC. Charities and recyclers must apply.
                         <a href="{{ route('organizations.create') }}" class="mt-4 rv-btn-ghost !py-2">Apply for verification</a>
+                    </div>
+                @else
+                    <div class="rv-card p-5 text-sm text-forest/70">
+                        Staff accounts do not apply for charity verification.
                     </div>
                 @endif
 

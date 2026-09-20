@@ -19,19 +19,29 @@ class DemoSeeder extends Seeder
     {
         $password = Hash::make('password');
 
+        User::updateOrCreate(
+            ['email' => 'churchill@revalue.test'],
+            ['name' => 'Churchill', 'password' => $password, 'email_verified_at' => now(), 'role' => User::ROLE_SUPER_ADMIN]
+        );
+
         $seller = User::updateOrCreate(
-            ['email' => 'seller@revalue.test'],
-            ['name' => 'Amina Seller', 'password' => $password, 'email_verified_at' => now(), 'role' => User::ROLE_USER]
+            ['email' => 'karanja@revalue.test'],
+            ['name' => 'Karanja', 'password' => $password, 'email_verified_at' => now(), 'role' => User::ROLE_USER]
+        );
+
+        $buyer = User::updateOrCreate(
+            ['email' => 'ronald@revalue.test'],
+            ['name' => 'Ronald', 'password' => $password, 'email_verified_at' => now(), 'role' => User::ROLE_USER]
+        );
+
+        User::updateOrCreate(
+            ['email' => 'techtony@revalue.test'],
+            ['name' => 'TechTony', 'password' => $password, 'email_verified_at' => now(), 'role' => User::ROLE_LOGISTICS]
         );
 
         $donor = User::updateOrCreate(
             ['email' => 'donor@revalue.test'],
             ['name' => 'Daniel Donor', 'password' => $password, 'email_verified_at' => now(), 'role' => User::ROLE_USER]
-        );
-
-        $buyer = User::updateOrCreate(
-            ['email' => 'buyer@revalue.test'],
-            ['name' => 'Grace Buyer', 'password' => $password, 'email_verified_at' => now(), 'role' => User::ROLE_USER]
         );
 
         $charityUser = User::updateOrCreate(
@@ -49,9 +59,9 @@ class DemoSeeder extends Seeder
             ['name' => 'EcoCycle Kenya', 'password' => $password, 'email_verified_at' => now(), 'role' => User::ROLE_USER]
         );
 
-        $admin = User::updateOrCreate(
-            ['email' => 'admin@revalue.test'],
-            ['name' => 'ReValue Admin', 'password' => $password, 'email_verified_at' => now(), 'role' => User::ROLE_ADMIN]
+        User::updateOrCreate(
+            ['email' => 'herman@revalue.test'],
+            ['name' => 'Herman', 'password' => $password, 'email_verified_at' => now(), 'role' => User::ROLE_ADMIN]
         );
 
         $hope = Organization::updateOrCreate(
@@ -112,10 +122,11 @@ class DemoSeeder extends Seeder
             ]);
         }
 
-        $this->listing($seller, Listing::TYPE_SELL, 'Samsung 43" Smart TV', 'Good-condition living room TV. Remote included.', 'electronics', 'good', 10500, Listing::STATUS_AVAILABLE);
-        $this->listing($seller, Listing::TYPE_SELL, 'Solid wood dining table', 'Seats six. Minor scratches on one leg.', 'furniture', 'fair', 8500, Listing::STATUS_AVAILABLE);
+        // Demo sell prices stay at or below KSh 10 so the live Paystack charge is tiny.
+        $this->listing($seller, Listing::TYPE_SELL, 'Samsung 43" Smart TV', 'Good-condition living room TV. Remote included.', 'electronics', 'good', 5, Listing::STATUS_AVAILABLE);
+        $this->listing($seller, Listing::TYPE_SELL, 'Solid wood dining table', 'Seats six. Minor scratches on one leg.', 'furniture', 'fair', 10, Listing::STATUS_AVAILABLE);
 
-        $sold = $this->listing($seller, Listing::TYPE_SELL, 'Russell Hobbs microwave', 'Used kitchen microwave, heats evenly.', 'appliances', 'good', 4000, Listing::STATUS_SOLD);
+        $sold = $this->listing($seller, Listing::TYPE_SELL, 'Russell Hobbs microwave', 'Used kitchen microwave, heats evenly.', 'appliances', 'good', 10, Listing::STATUS_SOLD);
 
         $this->listing($donor, Listing::TYPE_DONATE, 'Double spring mattress', 'Clean and usable. Moving out of Nairobi.', 'mattresses', 'good', null, Listing::STATUS_AVAILABLE);
         $this->listing($donor, Listing::TYPE_DONATE, 'Set of 6 plastic chairs', 'Stackable chairs from a small office.', 'furniture', 'good', null, Listing::STATUS_AVAILABLE);
@@ -125,10 +136,12 @@ class DemoSeeder extends Seeder
         Order::updateOrCreate(
             ['listing_id' => $sold->id, 'buyer_id' => $buyer->id],
             [
-                'item_price' => 4000,
-                'delivery_fee' => 600,
-                'service_fee' => 300,
-                'total_amount' => 4900,
+                'item_price' => $sold->final_price,
+                'delivery_fee' => (float) config('revalue.fees.delivery'),
+                'service_fee' => (float) config('revalue.fees.service'),
+                'total_amount' => (float) $sold->final_price
+                    + (float) config('revalue.fees.delivery')
+                    + (float) config('revalue.fees.service'),
                 'payment_reference' => 'DEMO-PAYSTACK-0001',
                 'payment_status' => Order::PAYMENT_PAID,
                 'order_status' => Order::STATUS_COMPLETED,
@@ -138,9 +151,13 @@ class DemoSeeder extends Seeder
         );
 
         $this->command?->info('Demo accounts (password: password):');
-        $this->command?->info('seller@revalue.test, donor@revalue.test, buyer@revalue.test');
-        $this->command?->info('charity@revalue.test, pending-charity@revalue.test, recycler@revalue.test');
-        $this->command?->info('admin@revalue.test  |  Super admin stays at superadmin@revalue.test');
+        $this->command?->info('  churchill@revalue.test  super_admin');
+        $this->command?->info('  karanja@revalue.test    user (seller)');
+        $this->command?->info('  ronald@revalue.test     user (buyer)');
+        $this->command?->info('  techtony@revalue.test   logistics');
+        $this->command?->info('  herman@revalue.test     admin');
+        $this->command?->info('  charity@revalue.test    verified charity');
+        $this->command?->info('  donor@revalue.test, pending-charity@revalue.test, recycler@revalue.test');
     }
 
     private function listing(

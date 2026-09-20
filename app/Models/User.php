@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Str;
 
 class User extends Authenticatable
 {
@@ -111,6 +112,24 @@ class User extends Authenticatable
         return $this->hasOne(DriverLocation::class);
     }
 
+    /**
+     * Email sent to Paystack. Buyers never type this; it comes from their
+     * account. Reserved demo domains (.test, .local) are rejected by Paystack
+     * as invalid, so those fall back to the configured billing address.
+     */
+    public function billingEmail(): string
+    {
+        $domain = strtolower((string) Str::after($this->email, '@'));
+
+        foreach (['.test', '.local', '.localhost', '.invalid', '.example'] as $reserved) {
+            if (str_ends_with($domain, $reserved)) {
+                return (string) config('revalue.paystack.billing_email');
+            }
+        }
+
+        return $this->email;
+    }
+
     public function hasRole(string $role): bool
     {
         return $this->role === $role;
@@ -133,6 +152,24 @@ class User extends Authenticatable
     public function isAdmin(): bool
     {
         return $this->hasRole(self::ROLE_ADMIN) || $this->isSuperAdmin();
+    }
+
+    /**
+     * Logistics accounts move items for ReValue; they never sell, donate,
+     * recycle or claim donations themselves.
+     */
+    public function canTrade(): bool
+    {
+        return ! $this->isLogistics();
+    }
+
+    /**
+     * Only ordinary accounts represent a charity or recycler. Staff accounts
+     * (admin, super admin, logistics) never apply for verification.
+     */
+    public function canApplyAsOrganization(): bool
+    {
+        return $this->isUser();
     }
 
     public function isSuperAdmin(): bool

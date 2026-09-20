@@ -35,5 +35,7 @@
         <env name="PAYSTACK_SECRET_KEY" value="sk_test_revalue_dummy"/>
         <env name="PAYSTACK_CALLBACK_URL" value="https://karanja.ninja/api/paystack/callback"/>
         <env name="PAYSTACK_CURRENCY" value="KES"/>
+        <env name="REVALUE_DELIVERY_FEE" value="600"/>
+        <env name="REVALUE_SERVICE_FEE" value="300"/>
     </php>
 </phpunit>

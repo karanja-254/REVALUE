@@ -137,16 +137,22 @@ class ListingController extends Controller
         ]);
     }
 
-    public function acceptPrice(Request $request, Listing $listing): JsonResponse
+    public function acceptPrice(Request $request, Listing $listing): JsonResponse|RedirectResponse
     {
         if ($listing->user_id !== $request->user()->id) {
+            abort_unless($request->wantsJson(), 403);
+
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
         if ($listing->suggested_price === null) {
-            return response()->json([
-                'error' => 'No suggested price available. Item requires manual review.',
-            ], 422);
+            $error = 'No suggested price available. Item requires manual review.';
+
+            if ($request->wantsJson()) {
+                return response()->json(['error' => $error], 422);
+            }
+
+            return back()->withErrors(['price' => $error]);
         }
 
         $listing->update([
@@ -154,15 +160,25 @@ class ListingController extends Controller
             'status' => 'available',
         ]);
 
-        return response()->json([
-            'message' => 'Price accepted. Item is now available for purchase.',
-            'listing' => $listing,
-        ]);
+        $message = 'Price accepted. Item is now available for purchase.';
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'message' => $message,
+                'listing' => $listing,
+            ]);
+        }
+
+        return redirect()
+            ->route('listings.show', $listing)
+            ->with('status', $message);
     }
 
-    public function requestReview(Request $request, Listing $listing): JsonResponse
+    public function requestReview(Request $request, Listing $listing): JsonResponse|RedirectResponse
     {
         if ($listing->user_id !== $request->user()->id) {
+            abort_unless($request->wantsJson(), 403);
+
             return response()->json(['error' => 'Unauthorized'], 403);
         }
 
@@ -171,9 +187,13 @@ class ListingController extends Controller
         ]);
 
         if ($listing->manualReview) {
-            return response()->json([
-                'error' => 'Item is already under manual review.',
-            ], 422);
+            $error = 'Item is already under manual review.';
+
+            if ($request->wantsJson()) {
+                return response()->json(['error' => $error], 422);
+            }
+
+            return back()->withErrors(['price' => $error]);
         }
 
         ManualReview::create([
@@ -184,9 +204,15 @@ class ListingController extends Controller
 
         $listing->update(['status' => 'under_review']);
 
-        return response()->json([
-            'message' => 'Your item has been submitted for manual pricing review. An admin will review it shortly.',
-        ]);
+        $message = 'Your item has been submitted for manual pricing review. An admin will review it shortly.';
+
+        if ($request->wantsJson()) {
+            return response()->json(['message' => $message]);
+        }
+
+        return redirect()
+            ->route('listings.show', $listing)
+            ->with('status', $message);
     }
 
     private function dispatchAiProcessing(Request $request, Listing $listing, ?string $imagePath): void

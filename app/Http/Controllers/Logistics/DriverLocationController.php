@@ -8,6 +8,7 @@ use App\Models\DriverLocation;
 use App\Models\LogisticsRoute;
 use App\Support\Logistics\MapData;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 
 class DriverLocationController extends Controller
 {
@@ -40,8 +41,15 @@ class DriverLocationController extends Controller
     /**
      * Polled by the route map to refresh marker positions without a reload.
      */
-    public function routeLocations(LogisticsRoute $route): JsonResponse
+    public function routeLocations(Request $request, LogisticsRoute $route): JsonResponse
     {
+        $user = $request->user();
+
+        // Admins and super admins see any route; a driver only sees their own.
+        if ($user === null || (! $user->isAdmin() && $route->driver_id !== $user->id)) {
+            abort(403);
+        }
+
         $route->loadMissing(['stops.order.listing.user', 'stops.order.buyer', 'driver.driverLocation']);
 
         return response()->json(MapData::forRoute($route));

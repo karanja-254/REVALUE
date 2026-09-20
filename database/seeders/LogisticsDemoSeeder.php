@@ -45,16 +45,18 @@ class LogisticsDemoSeeder extends Seeder
             return;
         }
 
-        if (User::where('email', 'driver@revalue.test')->exists()) {
+        if (LogisticsRoute::query()->exists()) {
             $this->command?->warn('Logistics demo already seeded; skipping.');
 
             return;
         }
 
+        // Same logistics account listed in the demo credentials, so the route
+        // he is assigned is the route he can actually open.
         $driver = User::updateOrCreate(
-            ['email' => 'driver@revalue.test'],
+            ['email' => 'techtony@revalue.test'],
             [
-                'name' => 'Dan the Driver',
+                'name' => 'TechTony',
                 'password' => Hash::make('password'),
                 'email_verified_at' => now(),
                 'role' => User::ROLE_LOGISTICS,
@@ -115,7 +117,7 @@ class LogisticsDemoSeeder extends Seeder
         $route->pickups()->first()?->update(['status' => RouteStop::STATUS_EN_ROUTE]);
 
         $this->command?->info('Logistics demo seeded:');
-        $this->command?->info('  Driver login: driver@revalue.test / password');
+        $this->command?->info('  Driver login: techtony@revalue.test / password');
         $this->command?->info('  Seller (share pickup): seller-demo@revalue.test / password');
         $this->command?->info('  Buyer (share delivery): buyer-demo@revalue.test / password');
         $this->command?->info("  Route #{$route->id} with {$route->stops()->count()} stops on {$route->collection_date->toDateString()}");
@@ -146,8 +148,14 @@ class LogisticsDemoSeeder extends Seeder
             'password' => Hash::make('password'),
         ]);
 
+        $itemPrice = 10;
+        $deliveryFee = (float) config('revalue.fees.delivery');
+        $serviceFee = (float) config('revalue.fees.service');
+
         $listing = Listing::factory()->available()->create([
             'user_id' => $seller->id,
+            'suggested_price' => $itemPrice,
+            'final_price' => $itemPrice,
             'title' => fake()->randomElement([
                 'Samsung 43" Smart TV', 'Leather 3-seater sofa', 'Double bed mattress',
                 'Office desk', 'Microwave oven', 'Dining table set',
@@ -164,6 +172,10 @@ class LogisticsDemoSeeder extends Seeder
             'listing_id' => $listing->id,
             'buyer_id' => $buyer->id,
             'order_status' => $orderStatus,
+            'item_price' => $itemPrice,
+            'delivery_fee' => $deliveryFee,
+            'service_fee' => $serviceFee,
+            'total_amount' => $itemPrice + $deliveryFee + $serviceFee,
             'pickup_verified_at' => $isPickedUp ? now()->subHours(2) : null,
             'delivery_address' => $withDeliveryLocation ? $deliveryPlace['name'] : null,
             'delivery_latitude' => $withDeliveryLocation ? $deliveryPlace['lat'] : null,

@@ -21,6 +21,15 @@ export function loadGoogleMaps(apiKey) {
         const callbackName = '__revalueGmapsReady';
         window[callbackName] = () => resolve(window.google.maps);
 
+        // Google calls this when the key is rejected (invalid key, API not
+        // enabled, billing off, referrer blocked). It can fire *after* the
+        // script loads, so components also listen for the event below.
+        window.gm_authFailure = () => {
+            window.__revalueMapsAuthFailed = true;
+            window.dispatchEvent(new CustomEvent('revalue:maps-auth-failed'));
+            reject(new Error('google-maps-auth-failed'));
+        };
+
         const script = document.createElement('script');
         const params = new URLSearchParams({
             key: apiKey,

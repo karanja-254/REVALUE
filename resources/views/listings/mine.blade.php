@@ -2,7 +2,9 @@
     <x-slot name="header">
         <div class="flex items-center justify-between">
             <h2 class="font-bold text-2xl text-forest">My items</h2>
-            <a href="{{ route('listings.create') }}" class="rv-btn-primary !py-2">New listing</a>
+            @if (Auth::user()->canTrade())
+                <a href="{{ route('listings.create') }}" class="rv-btn-primary !py-2">New listing</a>
+            @endif
         </div>
     </x-slot>
 

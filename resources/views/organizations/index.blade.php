@@ -8,7 +8,19 @@
                     Unverified organizations never appear here. That stops fake children's homes collecting free TVs and mattresses.
                 </p>
             </div>
-            <a href="{{ route('organizations.create') }}" class="rv-btn-primary">Apply for verification</a>
+            @guest
+                <a href="{{ route('login') }}" class="rv-btn-primary">Log in to apply</a>
+            @else
+                @if (Auth::user()->canApplyAsOrganization())
+                    @if (Auth::user()->organization)
+                        <a href="{{ route('organizations.create') }}" class="rv-btn-ghost">
+                            View application · <span class="capitalize">{{ Auth::user()->organization->verification_status }}</span>
+                        </a>
+                    @else
+                        <a href="{{ route('organizations.create') }}" class="rv-btn-primary">Apply for verification</a>
+                    @endif
+                @endif
+            @endguest
         </div>
 
         <div class="mt-8 grid gap-5 md:grid-cols-2">

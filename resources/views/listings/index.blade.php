@@ -26,7 +26,9 @@
                 <a href="{{ route('listings.index', ['type' => 'sell']) }}" class="{{ $type === 'sell' ? 'rv-btn-primary' : 'rv-btn-ghost' }} !py-2">Sell</a>
                 <a href="{{ route('listings.index', ['type' => 'donate']) }}" class="{{ $type === 'donate' ? 'rv-btn-primary' : 'rv-btn-ghost' }} !py-2">Donate</a>
                 <a href="{{ route('listings.index', ['type' => 'recycle']) }}" class="{{ $type === 'recycle' ? 'rv-btn-primary' : 'rv-btn-ghost' }} !py-2">Recycle</a>
-                <a href="{{ route('listings.create', ['type' => $type]) }}" class="rv-btn-accent !py-2">List an item</a>
+                @if (Auth::user()?->canTrade() ?? true)
+                    <a href="{{ route('listings.create', ['type' => $type]) }}" class="rv-btn-accent !py-2">List an item</a>
+                @endif
             </div>
         </div>
 
