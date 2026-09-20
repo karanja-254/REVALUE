@@ -7,28 +7,30 @@ use Exception;
 
 class AiService
 {
-    private Anthropic $client;
-
-    public function __construct()
-    {
-        $apiKey = config('services.anthropic.key');
-        if (!$apiKey) {
-            throw new Exception('ANTHROPIC_API_KEY not configured. AI recognition unavailable.');
-        }
-        $this->client = new Anthropic(apiKey: $apiKey);
-    }
+    private ?Anthropic $client = null;
 
     /**
      * Recognize item from image using Claude Vision
      *
-     * @param string $imageInput Image URL (starts with http) or base64-encoded image data
-     * @param string $sellerDescription Seller's item description
-     * @param string $mimeType MIME type for base64 images (e.g., 'image/jpeg', 'image/png', 'image/webp')
+     * @param  string  $imageInput  Image URL (starts with http) or base64-encoded image data
+     * @param  string  $sellerDescription  Seller's item description
+     * @param  string  $mimeType  MIME type for base64 images (e.g., 'image/jpeg', 'image/png', 'image/webp')
      * @return array{category: string, condition: string, brand: ?string, model: ?string, detected_defects: array, confidence: float}
+     *
      * @throws Exception
      */
     public function recognizeItem(string $imageInput, string $sellerDescription, string $mimeType = 'image/jpeg'): array
     {
+        $apiKey = config('services.anthropic.key');
+
+        if (! $apiKey) {
+            \Log::warning('AI recognition skipped: ANTHROPIC_API_KEY not configured.');
+
+            throw new Exception('ANTHROPIC_API_KEY not configured. Item queued for manual review.');
+        }
+
+        $this->client ??= new Anthropic(apiKey: $apiKey);
+
         try {
             $prompt = "Analyze this item image and seller description. Return JSON with:
 - category (e.g., Electronics, Furniture, Appliances)
@@ -70,7 +72,7 @@ Return ONLY valid JSON, no markdown or extra text.";
             $content = $response->content[0]->text;
             $result = json_decode($content, true);
 
-            if (!$result) {
+            if (! $result) {
                 throw new Exception('Failed to parse Claude response as JSON');
             }
 

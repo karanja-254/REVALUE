@@ -20,6 +20,7 @@
                     @endif
                     @if (Auth::user()->isAdmin())
                         <x-nav-link :href="route('admin.organizations.index')" :active="request()->routeIs('admin.organizations.*')">Verify charities</x-nav-link>
+                        <x-nav-link :href="route('admin.manual-reviews.index')" :active="request()->routeIs('admin.manual-reviews.*')">Manual reviews</x-nav-link>
                         <x-nav-link :href="route('admin.payouts.index')" :active="request()->routeIs('admin.payouts.*')">Payouts</x-nav-link>
                     @endif
                 </div>
@@ -72,6 +73,7 @@
             @endif
             @if (Auth::user()->isAdmin())
                 <x-responsive-nav-link :href="route('admin.organizations.index')">Verify charities</x-responsive-nav-link>
+                <x-responsive-nav-link :href="route('admin.manual-reviews.index')">Manual reviews</x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('admin.payouts.index')">Payouts</x-responsive-nav-link>
             @endif
         </div>

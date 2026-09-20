@@ -358,4 +358,41 @@ class PaystackCheckoutTest extends TestCase
                 && $request['currency'] === 'KES';
         });
     }
+
+    public function test_demo_zero_fees_charge_only_the_item_price(): void
+    {
+        config(['revalue.fees.delivery' => 0, 'revalue.fees.service' => 0]);
+
+        Http::fake([
+            'https://api.paystack.co/transaction/initialize' => Http::response([
+                'status' => true,
+                'data' => [
+                    'authorization_url' => 'https://checkout.paystack.com/demo5',
+                    'access_code' => 'access',
+                    'reference' => 'RV-DEMO5',
+                ],
+            ], 200),
+        ]);
+
+        $buyer = User::factory()->create();
+        $listing = Listing::factory()->available()->create(['final_price' => 5]);
+
+        $this->actingAs($buyer)
+            ->post(route('checkout.store', $listing))
+            ->assertRedirect('https://checkout.paystack.com/demo5');
+
+        $this->assertDatabaseHas('orders', [
+            'listing_id' => $listing->id,
+            'item_price' => 5,
+            'delivery_fee' => 0,
+            'service_fee' => 0,
+            'total_amount' => 5,
+        ]);
+
+        Http::assertSent(function ($request) {
+            return $request->url() === 'https://api.paystack.co/transaction/initialize'
+                && $request['amount'] === 500
+                && $request['currency'] === 'KES';
+        });
+    }
 }

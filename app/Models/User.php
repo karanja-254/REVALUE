@@ -135,6 +135,24 @@ class User extends Authenticatable
         return $this->hasRole(self::ROLE_ADMIN) || $this->isSuperAdmin();
     }
 
+    /**
+     * Logistics accounts move items for ReValue; they never sell, donate,
+     * recycle or claim donations themselves.
+     */
+    public function canTrade(): bool
+    {
+        return ! $this->isLogistics();
+    }
+
+    /**
+     * Only ordinary accounts represent a charity or recycler. Staff accounts
+     * (admin, super admin, logistics) never apply for verification.
+     */
+    public function canApplyAsOrganization(): bool
+    {
+        return $this->isUser();
+    }
+
     public function isSuperAdmin(): bool
     {
         return $this->hasRole(self::ROLE_SUPER_ADMIN);

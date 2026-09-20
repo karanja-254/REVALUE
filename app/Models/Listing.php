@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Facades\Storage;
 
 class Listing extends Model
 {
@@ -160,7 +161,19 @@ class Listing extends Model
             return null;
         }
 
-        return asset('storage/'.$this->image_path);
+        if (str_starts_with($this->image_path, 'http://') || str_starts_with($this->image_path, 'https://')) {
+            return $this->image_path;
+        }
+
+        $disk = Storage::disk('public');
+
+        // Only link a real uploaded file, so a missing file falls back to the
+        // category image instead of rendering a broken <img>.
+        if (! $disk->exists($this->image_path)) {
+            return null;
+        }
+
+        return $disk->url($this->image_path);
     }
 
     public function coverImage(): string

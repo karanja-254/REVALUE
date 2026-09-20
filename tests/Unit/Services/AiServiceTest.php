@@ -32,14 +32,16 @@ class AiServiceTest extends TestCase
         $this->assertEquals(0.92, $parsed['confidence']);
     }
 
-    public function test_missing_api_key_throws_exception(): void
+    public function test_missing_api_key_throws_from_recognize_item_not_the_constructor(): void
     {
         config(['services.anthropic.key' => null]);
+
+        $service = new AiService;
 
         $this->expectException(Exception::class);
         $this->expectExceptionMessage('ANTHROPIC_API_KEY not configured');
 
-        new AiService();
+        $service->recognizeItem('https://example.com/item.jpg', 'Samsung TV');
     }
 
     public function test_json_parsing_handles_valid_responses(): void

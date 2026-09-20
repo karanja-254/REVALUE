@@ -20,11 +20,17 @@
             <p class="mx-auto mt-5 max-w-xl text-base leading-relaxed text-white/85 sm:text-lg">
                 Sell, donate or recycle unwanted items without bargaining, transport headaches or unreliable strangers.
             </p>
-            <div class="mt-8 grid w-full max-w-xl gap-3 sm:grid-cols-3">
-                <a href="{{ route('listings.create', ['type' => 'sell']) }}" class="rv-btn-primary">Sell something</a>
-                <a href="{{ route('listings.create', ['type' => 'donate']) }}" class="rv-btn border border-white/20 bg-white/10 text-white backdrop-blur hover:bg-white/20">Donate something</a>
-                <a href="{{ route('listings.create', ['type' => 'recycle']) }}" class="rv-btn-accent">Recycle something</a>
-            </div>
+            @if (Auth::user()?->canTrade() ?? true)
+                <div class="mt-8 grid w-full max-w-xl gap-3 sm:grid-cols-3">
+                    <a href="{{ route('listings.create', ['type' => 'sell']) }}" class="rv-btn-primary">Sell something</a>
+                    <a href="{{ route('listings.create', ['type' => 'donate']) }}" class="rv-btn border border-white/20 bg-white/10 text-white backdrop-blur hover:bg-white/20">Donate something</a>
+                    <a href="{{ route('listings.create', ['type' => 'recycle']) }}" class="rv-btn-accent">Recycle something</a>
+                </div>
+            @else
+                <div class="mt-8">
+                    <a href="{{ route('logistics.dashboard') }}" class="rv-btn-primary">Open logistics dashboard</a>
+                </div>
+            @endif
             <p class="mt-5 text-sm text-white/70">No bargaining. The price you accept is the price.</p>
 
             <div class="mt-10 flex flex-wrap items-center justify-center gap-6 text-sm text-white/75 sm:gap-10">
