@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Exceptions\DuplicateChargeRequiresRefundException;
+use App\Exceptions\PaymentStillPendingException;
 use App\Models\Listing;
 use App\Models\Order;
 use App\Models\Payment;
@@ -12,9 +13,14 @@ use RuntimeException;
 
 class OrderPaymentService
 {
-    public function __construct(private PaystackService $paystack)
-    {
-    }
+    /**
+     * Paystack states that mean "the customer has not finished yet".
+     *
+     * @var list<string>
+     */
+    public const PENDING_STATUSES = ['pending', 'ongoing', 'processing', 'pay_offline', 'send_otp'];
+
+    public function __construct(private PaystackService $paystack) {}
 
     /**
      * Verify with Paystack, then mark the order paid. Never trust the browser alone.
@@ -48,6 +54,12 @@ class OrderPaymentService
             $status = $payload['status'] ?? null;
             $amount = (int) ($payload['amount'] ?? 0);
             $currency = strtoupper((string) ($payload['currency'] ?? ''));
+
+            // An M-PESA STK prompt sits in these states until the customer
+            // types their PIN. Nothing has failed yet, so leave the order be.
+            if (in_array($status, self::PENDING_STATUSES, true)) {
+                return [$order->fresh(), 'awaiting_customer'];
+            }
 
             if ($status !== 'success') {
                 $this->failOrder($order, $reference, $payload);
@@ -100,6 +112,10 @@ class OrderPaymentService
 
         if ($error === 'refund_required') {
             throw new DuplicateChargeRequiresRefundException($order);
+        }
+
+        if ($error === 'awaiting_customer') {
+            throw new PaymentStillPendingException($order);
         }
 
         if ($error !== null) {

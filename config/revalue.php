@@ -31,6 +31,10 @@ return [
         'base_url' => env('PAYSTACK_BASE_URL', 'https://api.paystack.co'),
         'callback_url' => env('PAYSTACK_CALLBACK_URL', 'https://karanja.ninja/api/paystack/callback'),
         'currency' => env('PAYSTACK_CURRENCY', 'KES'),
+
+        // Used only when a demo account uses a reserved domain such as
+        // @revalue.test, which Paystack rejects as an invalid email.
+        'billing_email' => env('PAYSTACK_BILLING_EMAIL', 'payments@revalue.co.ke'),
     ],
 
 ];

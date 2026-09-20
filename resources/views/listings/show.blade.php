@@ -117,10 +117,20 @@
                     @if ($listing->displayPrice() && $listing->isAvailable())
                         @auth
                             @if (Auth::id() !== $listing->user_id)
-                                <form method="POST" action="{{ route('checkout.store', $listing) }}" class="mt-4">
+                                <form method="POST" action="{{ route('checkout.store', $listing) }}" class="mt-4 rounded-2xl border border-forest/15 bg-white p-4">
                                     @csrf
                                     <x-input-error :messages="$errors->get('checkout')" class="mb-3" />
-                                    <button class="rv-btn-primary w-full">Buy at this price</button>
+                                    <label for="phone" class="text-xs font-semibold uppercase tracking-[0.16em] text-clay">M-PESA phone number</label>
+                                    <input id="phone" name="phone" type="tel" inputmode="numeric" required
+                                        placeholder="0712345678" value="{{ old('phone') }}"
+                                        class="mt-2 w-full rounded-xl border-forest/20 text-forest focus:border-clay focus:ring-clay">
+                                    <x-input-error :messages="$errors->get('phone')" class="mt-2" />
+                                    <button class="rv-btn-primary mt-3 w-full">
+                                        Pay KSh {{ number_format($itemPrice + $deliveryFee + $serviceFee) }} with M-PESA
+                                    </button>
+                                    <p class="mt-2 text-xs text-forest/50">
+                                        You will get an M-PESA prompt on your phone. Enter your M-PESA PIN on the phone only — never on this site.
+                                    </p>
                                 </form>
                             @else
                                 <p class="mt-4 text-sm text-forest/60">This is your listing. A buyer will pay this locked price.</p>

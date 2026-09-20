@@ -52,6 +52,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/orders/{order}/review', [ReviewController::class, 'store'])->name('reviews.store');
 
     Route::post('/listings/{listing}/checkout', [CheckoutController::class, 'store'])->name('checkout.store');
+    Route::get('/checkout/{order}/waiting', [CheckoutController::class, 'waiting'])->name('checkout.waiting');
+    Route::get('/checkout/{order}/status', [CheckoutController::class, 'status'])->name('checkout.status');
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
     Route::get('/orders/failed', [OrderController::class, 'failed'])->name('orders.failed');
     Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');

@@ -24,6 +24,32 @@ class PaystackService
         return $response->json('data');
     }
 
+    /**
+     * Kenya M-PESA charge. Paystack sends an STK prompt to the phone; the
+     * customer types their M-PESA PIN on the handset, never in ReValue.
+     *
+     * @param  array<string, mixed>  $metadata
+     * @return array<string, mixed>
+     */
+    public function chargeMpesa(string $email, int $amountInSubunits, string $reference, string $phone, array $metadata = []): array
+    {
+        $response = $this->request()->post('/charge', [
+            'email' => $email,
+            'amount' => $amountInSubunits,
+            'currency' => $this->currency(),
+            'reference' => $reference,
+            'metadata' => $metadata,
+            'mobile_money' => [
+                'phone' => $phone,
+                'provider' => 'mpesa',
+            ],
+        ]);
+
+        $this->throwIfFailed($response, 'Paystack could not send the M-PESA prompt.');
+
+        return $response->json('data');
+    }
+
     public function verify(string $reference): array
     {
         $response = $this->request()->get('/transaction/verify/'.rawurlencode($reference));

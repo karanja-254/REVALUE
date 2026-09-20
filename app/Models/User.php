@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Str;
 
 class User extends Authenticatable
 {
@@ -109,6 +110,24 @@ class User extends Authenticatable
     public function driverLocation(): HasOne
     {
         return $this->hasOne(DriverLocation::class);
+    }
+
+    /**
+     * Email sent to Paystack. Buyers never type this; it comes from their
+     * account. Reserved demo domains (.test, .local) are rejected by Paystack
+     * as invalid, so those fall back to the configured billing address.
+     */
+    public function billingEmail(): string
+    {
+        $domain = strtolower((string) Str::after($this->email, '@'));
+
+        foreach (['.test', '.local', '.localhost', '.invalid', '.example'] as $reserved) {
+            if (str_ends_with($domain, $reserved)) {
+                return (string) config('revalue.paystack.billing_email');
+            }
+        }
+
+        return $this->email;
     }
 
     public function hasRole(string $role): bool
