@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: revalue-app
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+      - /app/vendor
+      - /app/node_modules
+    working_dir: /app
+    environment:
+      - APP_NAME=REVALUE
+      - APP_ENV=local
+      - APP_DEBUG=true
+      - APP_URL=http://127.0.0.1:8000
+      - DB_CONNECTION=sqlite
+      - DB_DATABASE=database.sqlite
+      - GOOGLE_MAPS_API_KEY=${GOOGLE_MAPS_API_KEY:-}
+    command: >
+      sh -c "php artisan migrate:fresh --seed --force 2>/dev/null || true
+             && php artisan serve --host=0.0.0.0 --port=8000"
+    depends_on:
+      - node
+
+  node:
+    image: node:22-alpine
+    container_name: revalue-vite
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    working_dir: /app
+    environment:
+      - VITE_APP_NAME=REVALUE
+    command: npm run dev
+    stdin_open: true
+    tty: true
