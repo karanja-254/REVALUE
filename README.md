@@ -703,3 +703,69 @@ Before starting work:
 ```bash
 git checkout main
 git pull origin main
+```
+
+---
+
+# 19. Demo Guide
+
+This section documents the actual demo build so anyone can run and present ReValue end to end.
+
+## Local setup
+
+```bash
+composer install
+npm install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate:fresh --seed
+php artisan storage:link
+npm run build
+php artisan serve
+```
+
+Optional keys in `.env` (all degrade gracefully when blank):
+
+- `PAYSTACK_SECRET_KEY` / `PAYSTACK_PUBLIC_KEY` — buyer M-PESA checkout.
+- `ANTHROPIC_API_KEY` — AI item recognition. Blank sends new listings to manual review.
+- `GOOGLE_MAPS_API_KEY` — live logistics map. Blank shows a coordinate/stop list instead.
+
+## Demo accounts
+
+Seeded by `DemoSeeder`. Every account uses the password `password` (development only — change before any real deployment).
+
+| Name | Email | Role | Use in demo |
+| --- | --- | --- | --- |
+| Churchill | `churchill@revalue.test` | super_admin | price overrides, manual reviews, everything |
+| Herman | `herman@revalue.test` | admin | manual reviews, charity verification, payouts |
+| Karanja | `karanja@revalue.test` | user | seller |
+| Ronald | `ronald@revalue.test` | user | buyer |
+| TechTony | `techtony@revalue.test` | logistics | pickups, deliveries, PIN verification, driver location |
+| Hope Home | `charity@revalue.test` | user | verified charity (claims donations) |
+
+An env-seeded super admin also exists at `superadmin@revalue.test`.
+
+## Role permissions
+
+- **user** — sell, buy, donate, recycle, claim donations (if a verified charity), track own orders.
+- **logistics** — logistics dashboard, assigned routes, pickup/delivery PIN verification, live driver location. Cannot sell, donate, recycle, or claim.
+- **admin** — manual pricing reviews, charity verification, seller payouts, refunds.
+- **super_admin** — everything above, plus price overrides.
+
+## End-to-end demo flow
+
+1. **Karanja** logs in and uploads a SELL item with a photo. The listing starts as `draft`.
+2. Pricing:
+   - With an Anthropic key, AI suggests a price and Karanja clicks **Accept KSh X and publish**.
+   - Without one, the item goes to `under_review`; **Herman** or **Churchill** prices it from **Manual reviews**, or Churchill uses the inline **Override price** panel.
+   - The listing becomes `available`.
+3. **Ronald** opens the Marketplace (newest available item first), opens the listing, enters his M-PESA number, and taps **Pay KSh X with M-PESA**. The M-PESA PIN is entered only on his phone, never in ReValue.
+4. Paystack confirms server-side (webhook / verification): order → `paid`, listing → `sold`, seller payout → `pending`, and pickup + delivery PINs are generated.
+5. **Herman** batches a collection run from the logistics dashboard, scheduling the order onto **TechTony's** route.
+6. **TechTony** collects the item; the seller gives the **Pickup PIN**: order → `picked_up`, payout → `ready`.
+7. **Herman** records the M-PESA payout receipt: payout → `paid`.
+8. **TechTony** delivers; **Ronald** gives the **Delivery PIN**: order → `completed`.
+
+## Demo money safety
+
+For the live demo, `REVALUE_DELIVERY_FEE=0` and `REVALUE_SERVICE_FEE=0`. With a Churchill override of KSh 5 the buyer total is KSh 5, so Paystack is charged exactly 500 subunits. Fees are read from config, never hardcoded in Blade.
