@@ -4,6 +4,7 @@ ReValue is a Kenyan web platform that helps people **sell, donate, or recycle un
 
 The platform handles:
 
+<<<<<<< Updated upstream
 - item listing.
 - AI-assisted item classification.
 - fixed-price offers
@@ -14,6 +15,16 @@ The platform handles:
 - charity donations.
 - recycling
 - ratings and reputation
+=======
+- item listing
+- AI-assisted item classification
+- fixed-price offers.
+- seller payout tracking.
+- pickup and delivery verification.
+- logistics tracking.
+- recycling.
+- ratings and reputation.
+>>>>>>> Stashed changes
 
 The core principle is simple:
 
